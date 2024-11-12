@@ -840,87 +840,87 @@ class Scheduler:
         self.running = running_queue
         return force_preemption_count
     
-    def _schedule_rr(
-        self,
-        budget: SchedulingBudget,
-    ) -> int:
-        """Sorts waiting and running queue. Also, force preempt requests
-        from the running queue if their priority is lower.
-        Priority-based preemption is used with the priority policy.
-        Args:
-            budget: The scheduling budget. The argument is in-place updated
-                when any requests are scheduled.
-        Returns:
-            A count of priority-based preemptions.
-        """
+    # def _schedule_rr(
+    #     self,
+    #     budget: SchedulingBudget,
+    # ) -> int:
+    #     """Sorts waiting and running queue. Also, force preempt requests
+    #     from the running queue if their priority is lower.
+    #     Priority-based preemption is used with the priority policy.
+    #     Args:
+    #         budget: The scheduling budget. The argument is in-place updated
+    #             when any requests are scheduled.
+    #     Returns:
+    #         A count of priority-based preemptions.
+    #     """
 
-        waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, item.waiting_time)))
-        add_to_running = List()
+    #     waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, item.waiting_time)))
+    #     add_to_running = List()
 
-        while waiting_queue:
-            waiting_item = waiting_queue[0]
-            if (True): #TODO: change to check if item has space for allocation
-                #TODO: schedule item to run
-                add_to_running.append(waiting_item)
-                waiting_queue.pop_left()
-            else:
-                break #TODO: is it ok? method doesn't look for smaller sequences on queue before breaking
+    #     while waiting_queue:
+    #         waiting_item = waiting_queue[0]
+    #         if (True): #TODO: change to check if item has space for allocation
+    #             #TODO: schedule item to run
+    #             add_to_running.append(waiting_item)
+    #             waiting_queue.pop_left()
+    #         else:
+    #             break #TODO: is it ok? method doesn't look for smaller sequences on queue before breaking
             
         
-        running_queue = deque(sorted(self.running, key=self._get_priority))
-        force_preemption_count = 0
-        to_evict = set()
-        blocks_to_swap_out: List[Tuple[int, int]] = []
+    #     running_queue = deque(sorted(self.running, key=self._get_priority))
+    #     force_preemption_count = 0
+    #     to_evict = set()
+    #     blocks_to_swap_out: List[Tuple[int, int]] = []
 
-        # if waiting_queue:
-        #     seq_group = waiting_queue.popleft()
-        #     num_new_seqs = seq_group.get_max_num_running_seqs()
-        #     num_new_tokens = self._get_num_new_tokens(seq_group,
-        #                                               SequenceStatus.WAITING,
-        #                                               False, budget)
+    #     # if waiting_queue:
+    #     #     seq_group = waiting_queue.popleft()
+    #     #     num_new_seqs = seq_group.get_max_num_running_seqs()
+    #     #     num_new_tokens = self._get_num_new_tokens(seq_group,
+    #     #                                               SequenceStatus.WAITING,
+    #     #                                               False, budget)
 
-        #Only preempt if job has produced rr num tokens since being scheduled
-        MAGIC_RR_NUM = 5 # TODO: replace
-        for running_seq in running_queue: ## TODO: change to above
-            if (running_seq.seqs.Sequence.get_output_len == 0 or 
-                running_seq.seqs.Sequence.get_output_len % MAGIC_RR_NUM != 0):
-                continue
-            if (not waiting_queue):
-                break
-            waiting_item = waiting_queue[0]
-            running_seq.waiting_time = 0
-            to_evict.add(running_seq)
-            waiting_queue.pop_left()
+    #     #Only preempt if job has produced rr num tokens since being scheduled
+    #     MAGIC_RR_NUM = 5 # TODO: replace
+    #     for running_seq in running_queue: ## TODO: change to above
+    #         if (running_seq.seqs.Sequence.get_output_len == 0 or 
+    #             running_seq.seqs.Sequence.get_output_len % MAGIC_RR_NUM != 0):
+    #             continue
+    #         if (not waiting_queue):
+    #             break
+    #         waiting_item = waiting_queue[0]
+    #         running_seq.waiting_time = 0
+    #         to_evict.add(running_seq)
+    #         waiting_queue.pop_left()
 
-            #Adjust budget to remove the victim sequence group
-            vseq_group = running_seq
-            num_running_tokens = self._get_num_new_tokens(
-                vseq_group, SequenceStatus.RUNNING, False, budget)
-            budget.subtract_num_batched_tokens(vseq_group.request_id,
-                                                num_running_tokens)
-            num_running_seqs = vseq_group.get_max_num_running_seqs()
-            budget.subtract_num_seqs(vseq_group.request_id,
-                                        num_running_seqs)
+    #         #Adjust budget to remove the victim sequence group
+    #         vseq_group = running_seq
+    #         num_running_tokens = self._get_num_new_tokens(
+    #             vseq_group, SequenceStatus.RUNNING, False, budget)
+    #         budget.subtract_num_batched_tokens(vseq_group.request_id,
+    #                                             num_running_tokens)
+    #         num_running_seqs = vseq_group.get_max_num_running_seqs()
+    #         budget.subtract_num_seqs(vseq_group.request_id,
+    #                                     num_running_seqs)
 
-            #Preempt out the victim sequence group
-            self._preempt(vseq_group, blocks_to_swap_out)
-            force_preemption_count += 1
+    #         #Preempt out the victim sequence group
+    #         self._preempt(vseq_group, blocks_to_swap_out)
+    #         force_preemption_count += 1
 
-        running_queue = deque(item for item in running_queue if item not in to_evict)
+    #     running_queue = deque(item for item in running_queue if item not in to_evict)
 
 
-        # add waiting to front
-        waiting_queue.extendleft(add_to_running)
+    #     # add waiting to front
+    #     waiting_queue.extendleft(add_to_running)
 
-        # add preempted to back
-        waiting_queue.extend(to_evict) 
+    #     # add preempted to back
+    #     waiting_queue.extend(to_evict) 
 
-        for i in range(len(waiting_queue)):
-            waiting_queue[i].waiting_time += 1
+    #     for i in range(len(waiting_queue)):
+    #         waiting_queue[i].waiting_time += 1
 
-        self.waiting = waiting_queue
-        self.running = running_queue
-        return force_preemption_count
+    #     self.waiting = waiting_queue
+    #     self.running = running_queue
+    #     return force_preemption_count
 
     def _schedule_prefills(
         self,

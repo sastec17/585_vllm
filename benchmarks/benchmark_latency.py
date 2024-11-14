@@ -20,6 +20,7 @@ def main(args: argparse.Namespace):
     print(args)
 
     engine_args = EngineArgs.from_cli_args(args)
+    print(engine_args)
 
     # NOTE(woosuk): If the request cannot be processed in a single batch,
     # the engine will automatically process the request in multiple batches.

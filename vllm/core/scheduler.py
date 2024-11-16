@@ -886,8 +886,8 @@ class Scheduler:
         #Only preempt if job has produced rr num tokens since being scheduled
         for running_seq in running_queue:
             assert len(running_seq.seqs) == 1 # need to figure out what to do if not 1
-            if (running_seq.seqs[0].get_output_len == 0 or 
-                running_seq.seqs[0].get_output_len % MAGIC_RR_NUM != 0):
+            if (running_seq.seqs[0].get_output_len() == 0 or 
+                running_seq.seqs[0].get_output_len() % MAGIC_RR_NUM != 0):
                 continue
             if (not waiting_queue):
                 break

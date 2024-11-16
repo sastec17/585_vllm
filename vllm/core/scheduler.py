@@ -877,7 +877,8 @@ class Scheduler:
                 waiting_queue.popleft()
             
         
-        running_queue = deque(sorted(self.running, key=self._get_priority).reverse())
+        running_queue = deque(sorted(self.running, key=self._get_priority))
+        running_queue.reverse() # start evicting from lowest priority
         force_preemption_count = 0
         to_evict = set()
         blocks_to_swap_out: List[Tuple[int, int]] = []

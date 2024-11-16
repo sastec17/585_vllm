@@ -187,7 +187,7 @@ class EngineArgs:
     collect_detailed_traces: Optional[str] = None
     disable_async_output_proc: bool = False
     override_neuron_config: Optional[Dict[str, Any]] = None
-    scheduling_policy: Literal["fcfs", "priority"] = "fcfs"
+    scheduling_policy: Literal["fcfs", "priority","priority_round_robin"] = "fcfs"
 
     # Pooling configuration.
     pooling_type: Optional[str] = None
@@ -864,7 +864,7 @@ class EngineArgs:
 
         parser.add_argument(
             '--scheduling-policy',
-            choices=['fcfs', 'priority'],
+            choices=['fcfs', 'priority','priority_round_robin'],
             default="fcfs",
             help='The scheduling policy to use. "fcfs" (first come first served'
             ', i.e. requests are handled in order of arrival; default) '

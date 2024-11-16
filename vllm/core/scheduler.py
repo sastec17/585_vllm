@@ -858,7 +858,7 @@ class Scheduler:
         
         MAGIC_RR_NUM = 5 # TODO: change to whatever value we decide on
         
-        waiting_queue = deque(sorted(self.waiting, key=lambda item: (-item.priority, item.waiting_time)))
+        waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
         add_to_running = List()
         # TODO: current system evicts based on number of higher priority requests in waiting queue, ignoring how many of those can be added without evicting (aside from the first)
 
@@ -1101,6 +1101,10 @@ class Scheduler:
         if len(prefills.seq_groups
                ) == 0 and self.scheduler_config.policy == "priority":
             self._schedule_priority_preemption(budget)
+
+        if len(prefills.seq_groups
+               ) == 0 and self.scheduler_config.policy == "priority_round_robin":
+            self._schedule_round_robin(budget)
 
         # Don't schedule decodes if prefills are scheduled.
         # NOTE: If `_schedule_prefills` doesn't enable chunking, self.running

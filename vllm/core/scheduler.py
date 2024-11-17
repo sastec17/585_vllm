@@ -859,7 +859,7 @@ class Scheduler:
         MAGIC_RR_NUM = 5 # TODO: change to whatever value we decide on
         
         waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
-        add_to_running = List()
+        add_to_running = []
         # TODO: current system evicts based on number of higher priority requests in waiting queue, ignoring how many of those can be added without evicting (aside from the first)
 
         if len(waiting_queue):

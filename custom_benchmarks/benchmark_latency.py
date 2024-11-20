@@ -2,6 +2,14 @@
 
 Use Oracle w/ output lengths to establish priority
 
+Example usage:
+python3 custom_benchmarks/benchmark_latency.py \
+    --input-json data/gpt2_output.json \
+    --model gpt2 \
+    --scheduling-policy priority_round_robin \
+    --output-json data/gpt2_rr_latency.json
+
+Inspired by benchmarks/benchmark_latency.py
 """
 import argparse
 import dataclasses
@@ -41,7 +49,7 @@ def _get_data(
         prompt = dataset[i]['input']
         prompt_token_ids = tokenizer(prompt).input_ids
         prompt_len = len(prompt_token_ids)
-        output_len = dataset[i]['output_token_len']
+        output_len = dataset[i]['output_tokens']
         if prompt_len < 4 or output_len < 4:
             # Prune too short sequences.
             continue
@@ -57,27 +65,30 @@ def _get_data(
 ######################################################################
 def main(args: argparse.Namespace):
     engine_args = EngineArgs.from_cli_args(args)
-    print(engine_args)
 
     llm = LLM(**dataclasses.asdict(engine_args))
-
-    sampling_params = SamplingParams(
-        n=args.n,
-        temperature=1.0,
-        top_p=1.0,
-        ignore_eos=True,
-        max_tokens=args.output_len,
-    )
-    
-    filtered_dataset = _get_data()
+    tokenizer = llm.get_tokenizer()
+    isinstance(tokenizer, PreTrainedTokenizerBase)
+    filtered_dataset = _get_data(dataset_path=args.input_json,
+                                 num_requests=args.num_iters,
+                                 tokenizer=tokenizer)
+   
     # Separate prompts and priorities
     prompts = []
     sampling_params = []
     priorities = []
-    for prompt, _priority in filtered_dataset:
+    for prompt, output_token_len in filtered_dataset:
         prompts.append(prompt)
-        priorities.append(_priority)
-        # TODO: use diff sampling_params? 
+        priorities.append(output_token_len)
+        sampling_params.append(
+            SamplingParams(
+                    n=args.n,
+                    temperature=1.0,
+                    top_p=1.0,
+                    ignore_eos=False,
+                    max_tokens=output_token_len,
+            )
+        )
     # Write two versions of data extraction function 
     # Use random CL flag with model  -> based on that extract data we need + initialize LLM as needed 
     def run_to_completion(profile_dir: Optional[str] = None):
@@ -95,23 +106,20 @@ def main(args: argparse.Namespace):
             print(p.key_averages())
         else:
             start_time = time.perf_counter()
-            if args.scheduling_policy == 'fcfs':
-                llm.generate(prompts,
-                            sampling_params=sampling_params,
-                            use_tqdm=False)
-        
-            elif args.scheduling_policy == 'priority':
-                print('priority rr')
+            if args.scheduling_policy == 'priority' or args.scheduling_policy=='priority_round_robin':
+                print('priority scheduling policy')
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False,
                             priority=priorities)
 
-            elif args.scheduling_policy == 'priority_round_robin':
+            # fcfs scheduling policy
+            else:
+                print('fcfs scheduling policy')
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False)
-            
+
             end_time = time.perf_counter()
             latency = end_time - start_time
             return latency
@@ -154,7 +162,7 @@ if __name__ == '__main__':
                         type=int,
                         default=1,
                         help='Number of generated sequences per prompt.')
-    parser.add_argument('--use-beam-search', action='store_true')
+    # parser.add_argument('--use-beam-search', action='store_true')
     parser.add_argument('--num-iters-warmup',
                         type=int,
                         default=10,

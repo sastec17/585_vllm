@@ -1,6 +1,11 @@
 """Construct dataset from chatbot_arena conversations prompts.
 
 PREREQUISITE: Run data/download_queries.py to download chatbot_arena queries first
+
+Example usage:
+python3 data/create_dataset.py \
+    --model gpt2 \
+    --output-json data/output.json
 """
 import dataclasses
 import json
@@ -14,11 +19,12 @@ def main(args):
     # initialize LLM instance with engineArgs (see benchmarking stuff)
     llm = LLM(**dataclasses.asdict(engine_args))
 
+    # naturally stop when output token seen
     sampling_params = SamplingParams(
         n=1,
-        temperature=0,
+        temperature=1.0,
         top_p=1.0,
-        ignore_eos=True,
+        ignore_eos=False,
         max_tokens=args.output_len,
     )
     output_arr = []

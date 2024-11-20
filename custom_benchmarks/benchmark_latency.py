@@ -64,6 +64,7 @@ def _get_data(
 # MAIN
 ######################################################################
 def main(args: argparse.Namespace):
+    random.seed(args.seed)
     engine_args = EngineArgs.from_cli_args(args)
 
     llm = LLM(**dataclasses.asdict(engine_args))
@@ -107,7 +108,6 @@ def main(args: argparse.Namespace):
         else:
             start_time = time.perf_counter()
             if args.scheduling_policy == 'priority' or args.scheduling_policy=='priority_round_robin':
-                print('priority scheduling policy')
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False,
@@ -115,7 +115,6 @@ def main(args: argparse.Namespace):
 
             # fcfs scheduling policy
             else:
-                print('fcfs scheduling policy')
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False)

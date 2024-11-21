@@ -5,7 +5,7 @@ Use Oracle w/ output lengths to establish priority
 
 Example usage:
 python3 custom_benchmarks/benchmark_throughput.py \
-    --input-json data \
+    --input-json data/gpt2_data.json \
     --model gpt2 \
     --scheduling-policy priority_round_robin \
     --output-json data/gpt2_rr_throughput.json

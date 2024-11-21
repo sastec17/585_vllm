@@ -681,7 +681,11 @@ class SequenceGroup:
         self.encoder_seq = encoder_seq
         self.trace_headers = trace_headers
         self.priority = priority
+
+        # added for 585
         self.waiting_time = 0
+        self.tokens_produced_since_last_schedule = 0
+        # added for 585
 
         self.cached_request_output = None
 

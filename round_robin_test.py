@@ -10,7 +10,7 @@ logging.getLogger("vllm").setLevel(logging.WARNING)
 logging.getLogger("transformers").setLevel(logging.WARNING)
 
 
-engine_args = EngineArgs(model="facebook/opt-125m", scheduling_policy="priority_round_robin", preemption_mode="swap")
+engine_args = EngineArgs(model="facebook/opt-125m", scheduling_policy="priority_round_robin", preemption_mode="swap", disable_async_output_proc=True)
 
 # Sample prompts.
 prompts = [

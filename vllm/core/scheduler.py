@@ -837,8 +837,7 @@ class Scheduler:
 
         waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
         self.waiting = waiting_queue
-        self.running = [item for item in running_queue if item not in preempted]
-        self.running = deque(sorted(self.running, key=self._get_priority))
+        self.running = deque(sorted([item for item in running_queue if item not in preempted], key=self._get_priority))
         
 
         return force_preemption_count

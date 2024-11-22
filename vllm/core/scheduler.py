@@ -802,10 +802,12 @@ class Scheduler:
             running_seq for running_seq in running_queue
             if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
         ])
+        print("hi hi hi hi hi")
 
         blocks_to_swap_out: List[Tuple[int, int]] = []
         force_preemption_count = 0
 
+        preempted = []
         # Do some preemption
         while eligible_preemptions:
             can_allocate = self.block_manager.can_allocate(seq_group)
@@ -815,7 +817,8 @@ class Scheduler:
                 break
 
             #Adjust budget to remove the victim sequence group
-            vseq_group = running_queue.pop()
+            vseq_group = eligible_preemptions.pop()
+            preempted.append(vseq_group)
             num_running_tokens = self._get_num_new_tokens(
                 vseq_group, SequenceStatus.RUNNING, False, budget)
             budget.subtract_num_batched_tokens(vseq_group.request_id,
@@ -825,16 +828,18 @@ class Scheduler:
                                         num_running_seqs)
 
             #Preempt out the victim sequence group
+            print("preempted from schedule_rr")
             self._preempt(vseq_group, blocks_to_swap_out)
-            waiting_queue.appendleft(vseq_group)
+            waiting_queue.append(vseq_group)
             force_preemption_count += 1
             #Put the sequence back into the waiting queue
-            waiting_queue.appendleft(seq_group)
+        waiting_queue.append(seq_group)
 
-        waiting_queue = deque(sorted(waiting_queue, key=self._get_priority))
-
+        waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
         self.waiting = waiting_queue
-        self.running = running_queue
+        self.running = [item for item in running_queue if item not in preempted]
+        self.running = deque(sorted(self.running, key=self._get_priority))
+        
 
         return force_preemption_count
         

@@ -14,8 +14,11 @@ Note that the chatbot_arena_conversations dataset provides a diverse set of quer
 As we are implementing a priority round-robin scheduling algorithm, we need to obtain the actual outputs to whichever model we want to test. 
 To do this, run the following:
 ```
-python3 data/create_dataset.py --model gpt2 --output-json data/gpt2_data.json
+python3 data/create_dataset.py --model gpt2
 ```
+output will be stored in `data/{model}_data.json`
+
+
 Note that you can replace the model with any of vLLM's [supported models](https://docs.vllm.ai/en/v0.6.2/models/supported_models.html)
 
 This script will obtain the response for each prompt by running the specified model on vLLM via offline inference. 

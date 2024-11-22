@@ -53,7 +53,7 @@ def main(args):
                      'output_len': len(generated_text),
                      'output_tokens': len(output_tokens)})
 
-        with open(args.output_json, 'w') as json_file:
+        with open(f"data/{args.model}_data.json", 'w') as json_file:
             json.dump(output_arr, json_file, indent=4)
     return
 
@@ -69,12 +69,6 @@ if __name__ == "__main__":
         type=bool,
         default=False,
         help='Can choose to append output for each query to outputted JSON')
-    parser.add_argument(
-        '--output-json',
-        required=True,
-        type=str,
-        default=None,
-        help='Path to save the custom dataset in JSON format.')
     parser = EngineArgs.add_cli_args(parser)
     args = parser.parse_args()
     main(args)

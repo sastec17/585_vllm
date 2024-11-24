@@ -70,10 +70,22 @@ python3 benchmark_throughput.py --input-json data/gpt2_data.json \
 ```
 
 #### Online throughput
+Online benchmarking requires us to run our desired model as a server. We can do this as follows:
+```
+vllm serve gpt2 --swap-space 16 --disable-log-requests --scheduling-policy fcfs
+```
+Here, we can replace `gpt2` with the desired model, and `fcfs` with the desired scheduling policy.
 
-#### TODO: FIGURE OUT ONLINE THROUGHPUT STUFF
-
-
+On the client side, run the following for online benchmarking (in the custom_benchmarking/ directory):
+```
+python3 online_benchmarking.py --backend vllm \
+    --model gpt2 \
+    --schedule fcfs \ # By default <schedule> is fcfs
+    --dataset-path data/gpt2_data.json \
+    --request-rate <request_rate> \ # By default <request_rate> is inf
+    --num-prompts <num_prompts> # By default <num_prompts> is 1000
+```
+Results are by default stored in current directory with the following format: {backend}-{args.request_rate}qps-{base_model_id}-{current_dt}.json
 
 ## Considersations:
 

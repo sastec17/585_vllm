@@ -12,8 +12,8 @@ On the server side, run one of the following commands:
 On the client side, run:
     python benchmarks/benchmark_serving.py \
         --backend <backend> \
+        --schedule <scheduling_policy> \ # By default <schedule> is fcfs 
         --model <your_model> \
-        --dataset-name sharegpt \
         --dataset-path <path to dataset> \
         --request-rate <request_rate> \ # By default <request_rate> is inf
         --num-prompts <num_prompts> # By default <num_prompts> is 1000
@@ -24,8 +24,6 @@ On the client side, run:
 """
 import argparse
 import asyncio
-import base64
-import io
 import json
 import os
 import random
@@ -33,13 +31,11 @@ import time
 import warnings
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, AsyncGenerator, Collection, Dict, List, Optional, Tuple
+from typing import Any, AsyncGenerator, Dict, List, Optional, Tuple
 
 import numpy as np
 from backend_request_func import (ASYNC_REQUEST_FUNCS, RequestFuncInput,
                                   RequestFuncOutput)
-from datasets import load_dataset
-from PIL.Image import Image
 from tqdm.asyncio import tqdm
 from transformers import PreTrainedTokenizerBase
 
@@ -497,7 +493,8 @@ def _get_data(
         dataset = dataset[0:100]
     # Shuffle dataset
     random.shuffle(dataset)
-    filtered_dataset: List[Tuple[str, int]] = []
+    # match original sharegpt formatting
+    filtered_dataset: List[Tuple[str, int, int]] = []
     for i in range((len(dataset))):
         if len(filtered_dataset) == num_requests:
             break
@@ -640,22 +637,16 @@ if __name__ == "__main__":
         "next release.",
     )
     parser.add_argument(
-        "--dataset-name",
-        type=str,
-        default="sharegpt",
-        choices=["sharegpt", "sonnet", "random", "hf"],
-        help="Name of the dataset to benchmark on.",
-    )
-    parser.add_argument(
         "--schedule",
         type=str,
         default="fcfs",
         choices=["fcfs", "priority", "priority_round_robin"],
-        help="Name of the dataset to benchmark on.",
+        help="Name of desired scheduling policy.",
     )
     parser.add_argument("--dataset-path",
                         type=str,
                         default=None,
+                        required=True,
                         help="Path to the sharegpt/sonnet dataset. "
                         "Or the huggingface dataset ID if using HF dataset.")
     parser.add_argument(
@@ -807,86 +798,6 @@ if __name__ == "__main__":
         "\"ttft\", \"tpot\", \"e2el\". For more context on the definition of "
         "goodput, refer to DistServe paper: https://arxiv.org/pdf/2401.09670 "
         "and the blog: https://hao-ai-lab.github.io/blogs/distserve")
-
-    # group for dataset specific arguments
-    sonnet_group = parser.add_argument_group("sonnet dataset options")
-    sonnet_group.add_argument(
-        "--sonnet-input-len",
-        type=int,
-        default=550,
-        help=
-        "Number of input tokens per request, used only for sonnet dataset.",
-    )
-    sonnet_group.add_argument(
-        "--sonnet-output-len",
-        type=int,
-        default=150,
-        help=
-        "Number of output tokens per request, used only for sonnet dataset.",
-    )
-    sonnet_group.add_argument(
-        "--sonnet-prefix-len",
-        type=int,
-        default=200,
-        help=
-        "Number of prefix tokens per request, used only for sonnet dataset.",
-    )
-
-    sharegpt_group = parser.add_argument_group("sharegpt dataset options")
-    sharegpt_group.add_argument(
-        "--sharegpt-output-len",
-        type=int,
-        default=None,
-        help="Output length for each request. Overrides the output length "
-        "from the ShareGPT dataset.")
-
-    random_group = parser.add_argument_group("random dataset options")
-    random_group.add_argument(
-        "--random-input-len",
-        type=int,
-        default=1024,
-        help=
-        "Number of input tokens per request, used only for random sampling.",
-    )
-    random_group.add_argument(
-        "--random-output-len",
-        type=int,
-        default=128,
-        help=
-        "Number of output tokens per request, used only for random sampling.",
-    )
-    random_group.add_argument(
-        "--random-range-ratio",
-        type=float,
-        default=1.0,
-        help="Range of sampled ratio of input/output length, "
-        "used only for random sampling.",
-    )
-    random_group.add_argument(
-        "--random-prefix-len",
-        type=int,
-        default=0,
-        help="Number of fixed prefix tokens before random "
-        " context. The length range of context in a random "
-        " request is [random-prefix-len, "
-        " random-prefix-len + random-prefix-len * random-range-ratio).")
-
-    hf_group = parser.add_argument_group("hf dataset options")
-    hf_group.add_argument("--hf-subset",
-                          type=str,
-                          default=None,
-                          help="Subset of the HF dataset.")
-    hf_group.add_argument("--hf-split",
-                          type=str,
-                          default=None,
-                          help="Split of the HF dataset.")
-    hf_group.add_argument(
-        "--hf-output-len",
-        type=int,
-        default=None,
-        help="Output length for each request. Overrides the output lengths "
-        "from the sampled HF dataset.",
-    )
 
     args = parser.parse_args()
     main(args)

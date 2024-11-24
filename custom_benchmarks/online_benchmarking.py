@@ -248,6 +248,7 @@ async def benchmark(
     ignore_eos: bool,
     gootput_config_dict: Dict[str, float],
     max_concurrency: Optional[int],
+    scheduling_policy= str
 ):
     if backend in ASYNC_REQUEST_FUNCS:
         request_func = ASYNC_REQUEST_FUNCS[backend]
@@ -255,6 +256,7 @@ async def benchmark(
         raise ValueError(f"Unknown backend: {backend}")
 
     print("Starting initial single prompt test run...")
+    # Leave in for now - Can likely prune mm_content stuff later
     test_prompt, test_prompt_len, test_output_len, test_mm_content = (
         input_requests[0])
     if backend != "openai-chat" and test_mm_content is not None:
@@ -272,7 +274,7 @@ async def benchmark(
         multi_modal_content=test_mm_content,
         ignore_eos=ignore_eos,
     )
-    test_output = await request_func(request_func_input=test_input, scheduling_policy=args.schedule)
+    test_output = await request_func(request_func_input=test_input, scheduling_policy=scheduling_policy)
     if not test_output.success:
         raise ValueError(
             "Initial test run failed - Please make sure benchmark arguments "
@@ -291,7 +293,7 @@ async def benchmark(
                                          best_of=best_of,
                                          multi_modal_content=test_mm_content,
                                          ignore_eos=ignore_eos)
-        profile_output = await request_func(request_func_input=profile_input)
+        profile_output = await request_func(request_func_input=profile_input, scheduling_policy=scheduling_policy)
         if profile_output.success:
             print("Profiler started")
 
@@ -316,10 +318,12 @@ async def benchmark(
     async def limited_request_func(request_func_input, pbar):
         if semaphore is None:
             return await request_func(request_func_input=request_func_input,
-                                      pbar=pbar)
+                                      pbar=pbar,
+                                      scheduling_policy=scheduling_policy)
         async with semaphore:
             return await request_func(request_func_input=request_func_input,
-                                      pbar=pbar)
+                                      pbar=pbar,
+                                      scheduling_policy=scheduling_policy)
 
     benchmark_start_time = time.perf_counter()
     tasks: List[asyncio.Task] = []
@@ -351,7 +355,7 @@ async def benchmark(
             logprobs=logprobs,
             best_of=best_of,
         )
-        profile_output = await request_func(request_func_input=profile_input)
+        profile_output = await request_func(request_func_input=profile_input, scheduling_policy=scheduling_policy)
         if profile_output.success:
             print("Profiler stopped")
 
@@ -558,6 +562,7 @@ def main(args: argparse.Namespace):
             ignore_eos=args.ignore_eos,
             gootput_config_dict=gootput_config_dict,
             max_concurrency=args.max_concurrency,
+            scheduling_policy=args.schedule
         ))
 
     # Save config and results to json

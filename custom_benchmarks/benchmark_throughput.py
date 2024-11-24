@@ -84,7 +84,8 @@ def run_vllm(
     if args.scheduling_policy == 'priority' or \
         args.scheduling_policy == 'priority_round_robin':
         print('priority/rr scheduling policy')
-        llm.generate(prompts, sampling_params, priorities=priorities, use_tqdm=True)
+        llm.generate(prompts, sampling_params, 
+                     priority=priorities, use_tqdm=True)
     else:
         print('fcfs scheduling policy')
         llm.generate(prompts, sampling_params, use_tqdm=True)

@@ -62,7 +62,8 @@ async def async_request_openai_completions(
             "ignore_eos": request_func_input.ignore_eos,
         }
         # priority or priority round robin has priority passed through
-        if scheduling_policy == "priority_round_robin" or scheduling_policy == "priority":
+        if scheduling_policy == "priority_round_robin" \
+            or scheduling_policy == "priority":
             print("set priority for rr")
             payload["priority"] = request_func_input.output_len
 

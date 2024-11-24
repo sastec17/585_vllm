@@ -1,6 +1,7 @@
 """Construct dataset from chatbot_arena conversations prompts.
 
-PREREQUISITE: Run data/download_queries.py to download chatbot_arena queries first
+PREREQUISITE: Run data/download_queries.py to download chatbot_arena 
+queries first
 
 Example usage:
 python3 data/create_dataset.py \
@@ -9,7 +10,6 @@ python3 data/create_dataset.py \
 """
 import dataclasses
 import json
-from pathlib import Path
 from vllm import LLM, SamplingParams
 from vllm.engine.arg_utils import EngineArgs
 from vllm.utils import FlexibleArgumentParser
@@ -47,7 +47,7 @@ def main(args):
                 # get number of tokens
                 output_tokens = tokenizer.encode(generated_text)
 
-                # IF output argument flag on, append output to return json as well
+                # IF output argument flag on, append to return json
                 output_arr.append(
                     {'input': prompt,
                      'output_len': len(generated_text),
@@ -58,7 +58,8 @@ def main(args):
     return
 
 if __name__ == "__main__":
-    parser = FlexibleArgumentParser(description="Create custom dataset for model.")
+    parser = FlexibleArgumentParser(
+        description="Create custom dataset for model.")
     # Append output? Will be false otherwise Add as CL argument
     # CL argument for binned vs. exact - Default to exact
     parser.add_argument('--batch-size', type=int, default=8)

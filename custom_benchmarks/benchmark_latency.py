@@ -2,9 +2,9 @@
 
 Use Oracle w/ output lengths to establish priority
 
-Example usage:
-python3 custom_benchmarks/benchmark_latency.py \
-    --input-json data/gpt2_output.json \
+Example usage (from custom_benchmarking/ folder):
+python3 benchmark_latency.py \
+    --input-json data/gpt2_data.json \
     --model gpt2 \
     --scheduling-policy priority_round_robin \
     --output-json data/gpt2_rr_latency.json
@@ -26,6 +26,11 @@ from vllm import LLM, SamplingParams
 from vllm.engine.arg_utils import EngineArgs
 from vllm.utils import FlexibleArgumentParser
 from transformers import PreTrainedTokenizerBase
+import logging
+
+# Set logging level to suppress INFO and DEBUG messages.
+logging.getLogger("vllm").setLevel(logging.WARNING)
+logging.getLogger("transformers").setLevel(logging.WARNING)
 
 # HELPER FUNCTIONS 
 ######################################################################
@@ -64,7 +69,7 @@ def _get_data(
 def main(args: argparse.Namespace):
     random.seed(args.seed)
     engine_args = EngineArgs.from_cli_args(args)
-
+    print(engine_args)
     llm = LLM(**dataclasses.asdict(engine_args))
     tokenizer = llm.get_tokenizer()
     isinstance(tokenizer, PreTrainedTokenizerBase)
@@ -107,6 +112,7 @@ def main(args: argparse.Namespace):
             start_time = time.perf_counter()
             if args.scheduling_policy == 'priority' or \
                 args.scheduling_policy=='priority_round_robin':
+                print('priority_rr')
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False,

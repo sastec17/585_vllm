@@ -19,7 +19,7 @@ def _write_json(filename, data):
 
 ##########################################################
 if __name__ == "__main__":
-    # Login using e.g. `huggingface-cli login` on terminal to access this dataset
+    # Login using `huggingface-cli login` on terminal to access dataset
     ds = load_dataset('lmsys/chatbot_arena_conversations', split="train")
 
     df = pd.DataFrame(ds)
@@ -28,8 +28,10 @@ if __name__ == "__main__":
     # conversation_a = []
     queries_a = []
     for conversation in df['conversation_a']:
-        curr_convo = {'q': conversation[0]['content'],   # Position 0 hold the query
-                    'a': conversation[1]['content']}     # Position 1 holds the response
+        # Position 0 hold the query
+        # Position 1 holds the response
+        curr_convo = {'q': conversation[0]['content'],
+                    'a': conversation[1]['content']} 
         # conversation_a.append(curr_convo)
 
         queries_a.append(conversation[0]['content'])

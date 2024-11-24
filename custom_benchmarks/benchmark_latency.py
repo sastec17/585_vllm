@@ -15,7 +15,6 @@ import argparse
 import dataclasses
 import json
 import time
-from pathlib import Path
 from typing import List, Optional, Tuple
 
 import numpy as np
@@ -25,9 +24,8 @@ import random
 
 from vllm import LLM, SamplingParams
 from vllm.engine.arg_utils import EngineArgs
-from vllm.inputs import PromptType
 from vllm.utils import FlexibleArgumentParser
-from transformers import AutoTokenizer, PreTrainedTokenizerBase
+from transformers import PreTrainedTokenizerBase
 
 # HELPER FUNCTIONS 
 ######################################################################
@@ -42,7 +40,7 @@ def _get_data(
     # Shuffle dataset
     random.shuffle(dataset)
     filtered_dataset: List[Tuple[str, int]] = []
-    for i in range((len(dataset))):
+    for i in range(len(dataset)):
         if len(filtered_dataset) == num_requests:
             break
         # tokenize prompt inputs to filter
@@ -91,7 +89,7 @@ def main(args: argparse.Namespace):
             )
         )
     # Write two versions of data extraction function 
-    # Use random CL flag with model  -> based on that extract data we need + initialize LLM as needed 
+    # Use random CL flag with model -> extract data we need + initialize LLM as needed 
     def run_to_completion(profile_dir: Optional[str] = None):
         if profile_dir:
             with torch.profiler.profile(
@@ -107,7 +105,8 @@ def main(args: argparse.Namespace):
             print(p.key_averages())
         else:
             start_time = time.perf_counter()
-            if args.scheduling_policy == 'priority' or args.scheduling_policy=='priority_round_robin':
+            if args.scheduling_policy == 'priority' or \
+                args.scheduling_policy=='priority_round_robin':
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False,

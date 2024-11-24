@@ -5,7 +5,7 @@ Use Oracle w/ output lengths to establish priority
 
 Example usage:
 python3 custom_benchmarks/benchmark_throughput.py \
-    --input-json data/gpt2_data.json \
+    --dataset data/gpt2_data.json \
     --model gpt2 \
     --scheduling-policy priority_round_robin \
     --output-json data/gpt2_rr_throughput.json
@@ -17,26 +17,16 @@ import dataclasses
 import json
 import random
 import time
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
-import torch
-import uvloop
-from PIL import Image
-from tqdm import tqdm
-from transformers import (AutoModelForCausalLM, AutoTokenizer,
-                          PreTrainedTokenizerBase)
+from transformers import (PreTrainedTokenizerBase)
 from vllm import LLM, SamplingParams
 from vllm.engine.arg_utils import AsyncEngineArgs, EngineArgs
-from vllm.entrypoints.openai.api_server import (
-    build_async_engine_client_from_engine_args)
-from vllm.inputs import TextPrompt
-from vllm.multimodal import MultiModalDataDict
-from vllm.sampling_params import BeamSearchParams
-from vllm.utils import FlexibleArgumentParser, merge_async_iterators
+from vllm.utils import FlexibleArgumentParser
 
 def sample_requests(tokenizer: PreTrainedTokenizerBase,
                     args: argparse.Namespace):
-    dataset_path: str = args.datset
+    dataset_path: str = args.dataset
     num_requests: int = args.num_prompts
     # can add fixed output_len
     model: str = args.model
@@ -91,7 +81,8 @@ def run_vllm(
             )
         )
     start = time.perf_counter()
-    if args.scheduling_policy == 'priority' or args.scheduling_policy == 'priority_round_robin':
+    if args.scheduling_policy == 'priority' or \
+        args.scheduling_policy == 'priority_round_robin':
         print('priority/rr scheduling policy')
         llm.generate(prompts, sampling_params, priorities=priorities, use_tqdm=True)
     else:

@@ -75,7 +75,7 @@ def main(args: argparse.Namespace):
     tokenizer = llm.get_tokenizer()
     isinstance(tokenizer, PreTrainedTokenizerBase)
     filtered_dataset = _get_data(dataset_path=args.input_json,
-                                 num_requests=args.num_iters,
+                                 num_requests=1000,
                                  tokenizer=tokenizer)
    
     # Separate prompts and priorities
@@ -94,18 +94,6 @@ def main(args: argparse.Namespace):
                     max_tokens=output_token_len,
             )
         )
-    print("Checking latency related information:")
-    print(f"Scheduling policy: {engine_args.scheduling_policy}")
-    print(f"Priorities: {priorities[:10]}\n")
-    
-    outputs = llm.generate(prompts=prompts[0:500], 
-                                sampling_params=sampling_params[0:500])
-    return
-    if args.scheduling_policy == 'priority_round_robin':
-        outputs = llm.generate(prompts=prompts[0:500], 
-                                sampling_params=sampling_params[0:500],
-                                priority=priorities[0:500])
-        return
     # Write two versions of data extraction function 
     # Use random CL flag with model -> extract data we need + initialize LLM as needed 
     def run_to_completion(profile_dir: Optional[str] = None):
@@ -172,8 +160,7 @@ if __name__ == '__main__':
         description='Benchmark the latency of processing a single batch of '
         'requests till completion.')
     parser.add_argument('--input-len', type=int, default=32)
-    parser.add_argument('--output-len', type=int, default=128)
-    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--output-len', type=int, default=512)
     parser.add_argument('--n',
                         type=int,
                         default=1,

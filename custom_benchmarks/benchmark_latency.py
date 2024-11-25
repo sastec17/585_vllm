@@ -96,6 +96,15 @@ def main(args: argparse.Namespace):
     print("Checking latency related information:")
     print(f"Scheduling policy: {engine_args.scheduling_policy}")
     print(f"Priorities: {priorities[:10]}\n")
+    
+    outputs = llm.generate(prompts=prompts[0:500], 
+                                sampling_params=sampling_params[0:500])
+    return
+    if args.scheduling_policy == 'priority_round_robin':
+        outputs = llm.generate(prompts=prompts[0:500], 
+                                sampling_params=sampling_params[0:500],
+                                priority=priorities[0:500])
+        return
     # Write two versions of data extraction function 
     # Use random CL flag with model -> extract data we need + initialize LLM as needed 
     def run_to_completion(profile_dir: Optional[str] = None):
@@ -115,7 +124,6 @@ def main(args: argparse.Namespace):
             start_time = time.perf_counter()
             if args.scheduling_policy == 'priority' or \
                 args.scheduling_policy=='priority_round_robin':
-                print('priority_rr')
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False,

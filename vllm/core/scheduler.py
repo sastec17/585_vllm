@@ -802,7 +802,6 @@ class Scheduler:
             running_seq for running_seq in running_queue
             if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
         ])
-        print(f"Eligible preemptions: {len(eligible_preemptions)}")
         print("hi hi hi hi hi")
 
         blocks_to_swap_out: List[Tuple[int, int]] = []

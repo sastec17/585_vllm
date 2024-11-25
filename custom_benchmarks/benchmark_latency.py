@@ -41,7 +41,7 @@ def _get_data(
 ):
     with open(dataset_path, 'r') as file:
         dataset = json.load(file)
-        dataset = dataset[0:100]
+        dataset = dataset[0:1000]
     # Shuffle dataset
     random.shuffle(dataset)
     filtered_dataset: List[Tuple[str, int]] = []
@@ -87,12 +87,15 @@ def main(args: argparse.Namespace):
         sampling_params.append(
             SamplingParams(
                     n=args.n,
-                    temperature=1.0,
+                    temperature=0,
                     top_p=1.0,
                     ignore_eos=False,
                     max_tokens=output_token_len,
             )
         )
+    print("Checking latency related information:")
+    print(f"Scheduling policy: {engine_args.scheduling_policy}")
+    print(f"Priorities: {priorities[:10]}\n")
     # Write two versions of data extraction function 
     # Use random CL flag with model -> extract data we need + initialize LLM as needed 
     def run_to_completion(profile_dir: Optional[str] = None):

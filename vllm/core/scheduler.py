@@ -783,7 +783,7 @@ class Scheduler:
         self,
         budget: SchedulingBudget, 
     ) -> int:
-        
+
         MAGIC_RR_NUM = 30 # TODO: change to whatever value we decide on
 
         if not self.waiting:
@@ -802,6 +802,7 @@ class Scheduler:
             running_seq for running_seq in running_queue
             if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
         ])
+        print(f"Eligible preemptions: {len(eligible_preemptions)}")
         print("hi hi hi hi hi")
 
         blocks_to_swap_out: List[Tuple[int, int]] = []
@@ -1338,6 +1339,7 @@ class Scheduler:
         if self.scheduler_config.chunked_prefill_enabled:
             return self._schedule_chunked_prefill()
         else:
+            # print("in _schedule")
             return self._schedule_default()
 
     def _can_append_slots(self, seq_group: SequenceGroup,

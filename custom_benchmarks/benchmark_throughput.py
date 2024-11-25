@@ -74,7 +74,7 @@ def run_vllm(
         sampling_params.append(
             SamplingParams(
                 n=n,
-                temperature=1.0,
+                temperature=0,
                 top_p=1.0,
                 ignore_eos=False,
                 max_tokens=output_len,

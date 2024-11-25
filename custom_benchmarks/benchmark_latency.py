@@ -41,7 +41,6 @@ def _get_data(
 ):
     with open(dataset_path, 'r') as file:
         dataset = json.load(file)
-        dataset = dataset[0:100]
     # Shuffle dataset
     random.shuffle(dataset)
     filtered_dataset: List[Tuple[str, int]] = []
@@ -74,7 +73,7 @@ def main(args: argparse.Namespace):
     tokenizer = llm.get_tokenizer()
     isinstance(tokenizer, PreTrainedTokenizerBase)
     filtered_dataset = _get_data(dataset_path=args.input_json,
-                                 num_requests=args.num_iters,
+                                 num_requests=1000,
                                  tokenizer=tokenizer)
    
     # Separate prompts and priorities
@@ -87,7 +86,7 @@ def main(args: argparse.Namespace):
         sampling_params.append(
             SamplingParams(
                     n=args.n,
-                    temperature=1.0,
+                    temperature=0,
                     top_p=1.0,
                     ignore_eos=False,
                     max_tokens=output_token_len,
@@ -112,7 +111,6 @@ def main(args: argparse.Namespace):
             start_time = time.perf_counter()
             if args.scheduling_policy == 'priority' or \
                 args.scheduling_policy=='priority_round_robin':
-                print('priority_rr')
                 llm.generate(prompts,
                             sampling_params=sampling_params,
                             use_tqdm=False,

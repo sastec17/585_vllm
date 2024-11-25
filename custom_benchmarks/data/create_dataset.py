@@ -22,20 +22,17 @@ def main(args):
     # naturally stop when output token seen
     sampling_params = SamplingParams(
         n=1,
-        temperature=1.0,
+        temperature=0,
         top_p=1.0,
         ignore_eos=False,
         max_tokens=args.output_len,
     )
     output_arr = []
     # Open chatbot_arena dataset
-    print('opening dataset')
-    # TODO: MAKE SURE THIS WORKS
     tokenizer=llm.get_tokenizer()
     with open('data/chatbot_queries.json', 'r') as file:
         data = json.load(file)
         # TODO: Limit data for initial testing purposes
-        data=data[0:100]
         # process in batches
         for i in range(0, len(data), args.batch_size):
             batch = data[i:i+args.batch_size]
@@ -62,9 +59,9 @@ if __name__ == "__main__":
         description="Create custom dataset for model.")
     # Append output? Will be false otherwise Add as CL argument
     # CL argument for binned vs. exact - Default to exact
-    parser.add_argument('--batch-size', type=int, default=8)
+    parser.add_argument('--batch-size', type=int, default=32)
     # TODO: CHANGE DEFAULT OUTPUT SIZE? 
-    parser.add_argument('--output-len', type=int, default=256)
+    parser.add_argument('--output-len', type=int, default=512)
     parser.add_argument(
         '--append-output',
         type=bool,

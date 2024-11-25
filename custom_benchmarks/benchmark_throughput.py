@@ -33,7 +33,7 @@ def sample_requests(tokenizer: PreTrainedTokenizerBase,
     # Load dataset
     with open(dataset_path, 'r') as file:
         dataset = json.load(file)
-        dataset = dataset[0:100]
+        dataset = dataset[0:1000]
     random.shuffle(dataset)
 #     * Get prompt / completion
 #     * Tokenize + prune + append to filtered_dataset
@@ -74,7 +74,7 @@ def run_vllm(
         sampling_params.append(
             SamplingParams(
                 n=n,
-                temperature=1.0,
+                temperature=0,
                 top_p=1.0,
                 ignore_eos=False,
                 max_tokens=output_len,

@@ -68,7 +68,8 @@ def _get_data(
 ######################################################################
 def main(args: argparse.Namespace):
     random.seed(args.seed)
-    engine_args = EngineArgs.from_cli_args(args)
+    # engine_args = EngineArgs.from_cli_args(args)
+    engine_args = EngineArgs(model="gpt2", scheduling_policy="priority_round_robin", preemption_mode="swap", disable_async_output_proc=True)
     print(engine_args)
     llm = LLM(**dataclasses.asdict(engine_args))
     tokenizer = llm.get_tokenizer()

@@ -73,7 +73,7 @@ def main(args: argparse.Namespace):
     tokenizer = llm.get_tokenizer()
     isinstance(tokenizer, PreTrainedTokenizerBase)
     filtered_dataset = _get_data(dataset_path=args.input_json,
-                                 num_requests=1000,
+                                 num_requests=100,
                                  tokenizer=tokenizer)
    
     # Separate prompts and priorities

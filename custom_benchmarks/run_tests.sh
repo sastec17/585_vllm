@@ -1,5 +1,6 @@
 #!/bin/bash
 # Run full test suite for specified model
+# Example usage: ./run_tests.sh --model gpt2 --policy fcfs --script l --script tp 
 
 # Stop on errors
 set -Eeuo pipefail

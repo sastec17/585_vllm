@@ -68,6 +68,7 @@ if ! [ -e "$dataset_file" ]; then
     python3 data/create_dataset.py --model "$model"
 fi
 
+mkdir -p "data/${model}"
 # Iterate over script types and policies
 for script_type in "${scripts[@]}"; do
     for policy in "${policies[@]}"; do
@@ -77,14 +78,14 @@ for script_type in "${scripts[@]}"; do
                 python3 benchmark_latency.py --input-json "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
-                    --output-json "data/${model}_${policy}_latency.json"
+                    --output-json "data/${model}/${model}_${policy}_latency.json"
                 ;;
             tp)
                 echo "Running throughput script..."
                 python3 benchmark_throughput.py --dataset "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
-                    --output-json "data/${model}_${policy}_throughput.json"
+                    --output-json "data/${model}/${model}_${policy}_throughput.json"
                 ;;
             o)
                 echo "Running online benchmarking..."

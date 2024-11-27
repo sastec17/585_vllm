@@ -1,30 +1,37 @@
 #!/bin/bash
 # Run full test suite for specified model
 
-# stop on errors
+# Stop on errors
 set -Eeuo pipefail
 
 model=""
 policies=()
+scripts=()
+
 # Sanity check command line options
 usage() {
-  echo "Usage: $0 --model <model_name> [--policy <policy_name> ...]"
+  echo "Usage: $0 --model <model_name> [--policy <policy_name> ...] [--script <script_type> ...]"
 }
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --model|-m)
             model="$2"
-            shift 2 # Shift past argument and its value
+            shift 2
             ;;
         --policy|-p)
             policies+=("$2")
-            shift 2 # Shift past argument and its value
+            shift 2
+            ;;
+        --script|-s)
+            scripts+=("$2")
+            shift 2
             ;;
         --help|-h)
-            echo "Usage: $0 --model <model_name> [--policy <policy_name> ...]"
+            usage
             echo "    --model, -m       Specify the model name"
-            echo "    --policy, -p      Add scheduling policy (can be specified multiple times)"
+            echo "    --policy, -p      Add scheduling policy from [fcfs, priority, priority_round_robin]. Defaults to all."
+            echo "    --script, -s      Specify scripts to run from [l, tp, o]. Defaults to all."
             exit 0
             ;;
         *)
@@ -35,58 +42,83 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# model must be specified
+# Ensure model is specified
 if [[ -z $model ]]; then
     echo "Error: --model is required."
     exit 1
 fi
 
-# check if custom dataset already exists for model
+# Set default scripts if none provided
+if [[ ${#scripts[@]} -eq 0 ]]; then
+    scripts=("l" "tp" "o")
+    echo "No script types provided. Defaulting to: ${scripts[*]}"
+fi
+
+# Set default policies if none provided
+if [[ ${#policies[@]} -eq 0 ]]; then
+    policies=("fcfs" "priority" "priority_round_robin")
+    echo "No policies provided. Defaulting to: ${policies[*]}"
+fi
+
+# Check if custom dataset already exists for model
 dataset_file="data/${model}_data.json"
 if ! [ -e "$dataset_file" ]; then
     echo "Data doesn't exist for model ${model}. Creating now..."
     python3 data/create_dataset.py --model "$model"
 fi
 
-# TODO: Iterate over policies passed in + run accordingly
-echo "Running latency script..."
-python3 benchmark_latency.py --input-json data/"$model"_data.json \
-    --model "$model" \
-    --scheduling-policy fcfs \
-    --output-json data/"$model"_priority_latency.json
+# Iterate over script types and policies
+for script_type in "${scripts[@]}"; do
+    for policy in "${policies[@]}"; do
+        case $script_type in
+            l)
+                echo "Running latency script..."
+                python3 benchmark_latency.py --input-json "$dataset_file" \
+                    --model "$model" \
+                    --scheduling-policy "$policy" \
+                    --output-json "data/${model}_${policy}_latency.json"
+                ;;
+            tp)
+                echo "Running throughput script..."
+                python3 benchmark_throughput.py --dataset "$dataset_file" \
+                    --model "$model" \
+                    --scheduling-policy "$policy" \
+                    --output-json "data/${model}_${policy}_throughput.json"
+                ;;
+            o)
+                echo "Running online benchmarking..."
+                MODEL_SERVER_CMD="vllm serve $model --swap-space 16 --disable-log-requests --scheduling-policy $policy"
 
-echo "Running throughput script..."
-python3 benchmark_throughput.py --dataset data/gpt2_data.json \
-    --model "$model" \
-    --scheduling-policy fcfs \
-    --output-json data/"$model"_fcfs_throughput.json
+                # Start the model server in the background
+                echo "Starting model server..."
+                $MODEL_SERVER_CMD &
 
-echo "Running online benchmarking..."
-MODEL_SERVER_CMD="vllm serve $model --swap-space 16 --disable-log-requests --scheduling-policy fcfs"
+                # Capture the process ID (PID) of the server
+                SERVER_PID=$!
+                echo "Model server started with PID: $SERVER_PID"
 
-# Start the model server in the background
-echo "Starting model server..."
-$MODEL_SERVER_CMD &
+                # Wait for the server to be ready
+                echo "Waiting for the model server to initialize - Use conservative value"
+                sleep 120
 
-# Capture the process ID (PID) of the server
-SERVER_PID=$!
-echo "Model server started with PID: $SERVER_PID"
+                # Run the benchmarking script
+                echo "Running benchmarking script..."
+                python3 online_benchmarking.py --backend vllm \
+                    --model "$model" \
+                    --schedule "$policy" \
+                    --dataset-path "$dataset_file"
 
-# Wait for the server to be ready
-echo "Waiting for the model server to initialize - Use conservative value"
-sleep 120
+                # After the benchmarking script completes, stop the model server
+                echo "Stopping the model server..."
+                kill "$SERVER_PID"
 
-# Run the benchmarking script
-echo "Running benchmarking script..."
-python3 online_benchmarking.py --backend vllm \
-    --model $model \
-    --schedule fcfs \
-    --dataset-path data/"$model"_data.json
-
-# After the benchmarking script completes, stop the model server
-echo "Stopping the model server..."
-kill $SERVER_PID
-
-# Ensure the server process is terminated
-wait $SERVER_PID 2>/dev/null
-echo "Model server stopped. Batch job completed."
+                # Ensure the server process is terminated
+                wait "$SERVER_PID" 2>/dev/null || true
+                echo "Model server stopped. Batch job completed."
+                ;;
+            *)
+                echo "Unknown script type: $script_type"
+                ;;
+        esac
+    done
+done

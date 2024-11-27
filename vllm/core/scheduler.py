@@ -784,7 +784,7 @@ class Scheduler:
         budget: SchedulingBudget, 
     ) -> int:
         
-        MAGIC_RR_NUM = 30 # TODO: change to whatever value we decide on
+        MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
 
         if not self.waiting:
             return 0

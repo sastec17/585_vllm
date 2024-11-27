@@ -188,6 +188,7 @@ class EngineArgs:
     disable_async_output_proc: bool = False
     override_neuron_config: Optional[Dict[str, Any]] = None
     scheduling_policy: Literal["fcfs", "priority","priority_round_robin"] = "fcfs"
+    steps_before_preemption: int = 30
 
     # Pooling configuration.
     pooling_type: Optional[str] = None
@@ -873,6 +874,13 @@ class EngineArgs:
             'arrival deciding any ties).')
 
         parser.add_argument(
+            '--steps-before-preemption',
+            type=int,
+            default=EngineArgs.steps_before_preemption,
+            help='Number of generate steps before a request can be preempted'
+            'with the priority_round_robin scheduling policy.')
+
+        parser.add_argument(
             '--pooling-type',
             choices=[pt.name for pt in PoolingType],
             default=None,
@@ -1146,7 +1154,8 @@ class EngineArgs:
             multi_step_stream_outputs=self.multi_step_stream_outputs,
             send_delta_data=(envs.VLLM_USE_RAY_SPMD_WORKER
                              and parallel_config.use_ray),
-            policy=self.scheduling_policy)
+            policy=self.scheduling_policy,
+            steps_before_preemption=self.steps_before_preemption)
         lora_config = LoRAConfig(
             max_lora_rank=self.max_lora_rank,
             max_loras=self.max_loras,

@@ -33,7 +33,6 @@ def sample_requests(tokenizer: PreTrainedTokenizerBase,
     # Load dataset
     with open(dataset_path, 'r') as file:
         dataset = json.load(file)
-        dataset = dataset[0:1000]
     random.shuffle(dataset)
 #     * Get prompt / completion
 #     * Tokenize + prune + append to filtered_dataset

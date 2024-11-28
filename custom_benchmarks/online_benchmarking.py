@@ -494,7 +494,6 @@ def _get_data(
 )-> List[Tuple[str, int, int, None]]:
     with open(dataset_path, 'r') as file:
         dataset = json.load(file)
-        dataset = dataset[0:100]
     # Shuffle dataset
     random.shuffle(dataset)
     # match original sharegpt formatting

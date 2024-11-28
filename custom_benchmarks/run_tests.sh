@@ -84,9 +84,15 @@ for script_type in "${scripts[@]}"; do
                 ;;
             tp)
                 echo "Running throughput script..."
+                if [[ "$policy" == "priority_round_robin" ]]; then
+                    preempt_flag="--steps-before-preemption 60"
+                else
+                    preempt_flag=""
+                fi
                 python3 benchmark_throughput.py --dataset "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
+                    $preempt_flag \
                     --output-json "data/${sanitized_model}/${policy}_tp.json"
                 ;;
             o)

@@ -61,14 +61,16 @@ if [[ ${#policies[@]} -eq 0 ]]; then
     echo "No policies provided. Defaulting to: ${policies[*]}"
 fi
 
+sanitized_model="${model//\//_}"
+mkdir -p "data/${sanitized_model}"
 # Check if custom dataset already exists for model
-dataset_file="data/${model}_data.json"
+dataset_file="data/${sanitized_model}/${sanitized_model}_data.json"
+
 if ! [ -e "$dataset_file" ]; then
     echo "Data doesn't exist for model ${model}. Creating now..."
     python3 data/create_dataset.py --model "$model"
 fi
 
-mkdir -p "data/${model}"
 # Iterate over script types and policies
 for script_type in "${scripts[@]}"; do
     for policy in "${policies[@]}"; do
@@ -78,14 +80,14 @@ for script_type in "${scripts[@]}"; do
                 python3 benchmark_latency.py --input-json "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
-                    --output-json "data/${model}/${model}_${policy}_latency.json"
+                    --output-json "data/${sanitized_model}/${policy}_l.json"
                 ;;
             tp)
                 echo "Running throughput script..."
                 python3 benchmark_throughput.py --dataset "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
-                    --output-json "data/${model}/${model}_${policy}_throughput.json"
+                    --output-json "data/${sanitized_model}/${policy}_tp.json"
                 ;;
             o)
                 echo "Running online benchmarking..."

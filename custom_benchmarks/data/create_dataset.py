@@ -10,6 +10,7 @@ python3 data/create_dataset.py \
 """
 import dataclasses
 import json
+import os
 from vllm import LLM, SamplingParams
 from vllm.engine.arg_utils import EngineArgs
 from vllm.utils import FlexibleArgumentParser
@@ -49,8 +50,10 @@ def main(args):
                     {'input': prompt,
                      'output_len': len(generated_text),
                      'output_tokens': len(output_tokens)})
-
-        with open(f"data/{args.model}_data.json", 'w') as json_file:
+        sanitized_model = args.model.replace('/', '_')
+        output_dir = f"data/{sanitized_model}"
+        output_file = os.path.join(output_dir, f"{sanitized_model}_data.json")
+        with open(output_file, 'w') as json_file:
             json.dump(output_arr, json_file, indent=4)
     return
 

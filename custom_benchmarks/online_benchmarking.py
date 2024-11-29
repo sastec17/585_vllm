@@ -15,6 +15,7 @@ On the client side, run:
         --schedule <scheduling_policy> \ # By default <schedule> is fcfs 
         --model <your_model> \
         --dataset-path <path to dataset> \
+        --output-json data/gpt2/gpt2_o.json \
         --request-rate <request_rate> \ # By default <request_rate> is inf
         --num-prompts <num_prompts> # By default <num_prompts> is 1000
 
@@ -598,16 +599,9 @@ def main(args: argparse.Namespace):
         result_json = {**result_json, **benchmark_result}
 
         # Save to file
-        base_model_id = model_id.split("/")[-1]
-        max_concurrency_str = (f"-concurrency{args.max_concurrency}"
-                               if args.max_concurrency is not None else "")
-        file_name = f"{backend}-{args.request_rate}qps{max_concurrency_str}-{base_model_id}-{current_dt}.json"  #noqa
-        if args.result_filename:
-            file_name = args.result_filename
-        if args.result_dir:
-            file_name = os.path.join(args.result_dir, file_name)
-        with open(file_name, "w", encoding='utf-8') as outfile:
-            json.dump(result_json, outfile)
+        if args.output_json:
+            with open(args.output_json, "w", encoding='utf-8') as outfile:
+                json.dump(result_json, outfile)
 
 
 if __name__ == "__main__":
@@ -743,6 +737,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--save-result",
         action="store_true",
+        default=True,
         help="Specify to save benchmark results to a json file",
     )
     parser.add_argument(
@@ -754,20 +749,10 @@ if __name__ == "__main__":
         "for record keeping purposes.",
     )
     parser.add_argument(
-        "--result-dir",
+        '--output-json',
         type=str,
         default=None,
-        help="Specify directory to save benchmark json results."
-        "If not specified, results are saved in the current directory.",
-    )
-    parser.add_argument(
-        "--result-filename",
-        type=str,
-        default=None,
-        help="Specify the filename to save benchmark json results."
-        "If not specified, results will be saved in "
-        "{backend}-{args.request_rate}qps-{base_model_id}-{current_dt}.json"
-        " format.",
+        help='Path to save the latency results in JSON format.'
     )
     parser.add_argument(
         "--ignore-eos",

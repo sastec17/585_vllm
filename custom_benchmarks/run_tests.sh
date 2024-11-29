@@ -74,21 +74,23 @@ fi
 # Iterate over script types and policies
 for script_type in "${scripts[@]}"; do
     for policy in "${policies[@]}"; do
+        # Specify preemption with priority_round_robin
+        if [[ "$policy" == "priority_round_robin" ]]; then
+            preempt_flag="--steps-before-preemption 60"
+        else
+            preempt_flag=""
+        fi
         case $script_type in
             l)
                 echo "Running latency script..."
                 python3 benchmark_latency.py --input-json "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
+                    $preempt_flag \
                     --output-json "data/${sanitized_model}/${policy}_l.json"
                 ;;
             tp)
                 echo "Running throughput script..."
-                if [[ "$policy" == "priority_round_robin" ]]; then
-                    preempt_flag="--steps-before-preemption 60"
-                else
-                    preempt_flag=""
-                fi
                 python3 benchmark_throughput.py --dataset "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
@@ -97,7 +99,7 @@ for script_type in "${scripts[@]}"; do
                 ;;
             o)
                 echo "Running online benchmarking..."
-                MODEL_SERVER_CMD="vllm serve $model --swap-space 16 --disable-log-requests --scheduling-policy $policy"
+                MODEL_SERVER_CMD="vllm serve $model --swap-space 16 --disable-log-requests --scheduling-policy $policy $preempt_flag"
 
                 # Start the model server in the background
                 echo "Starting model server..."
@@ -116,8 +118,8 @@ for script_type in "${scripts[@]}"; do
                 python3 online_benchmarking.py --backend vllm \
                     --model "$model" \
                     --schedule "$policy" \
-                    --dataset-path "$dataset_file"
-
+                    --dataset-path "$dataset_file" \
+                    --output-json "data/${sanitized_model}/${policy}_o.json"
                 # After the benchmarking script completes, stop the model server
                 echo "Stopping the model server..."
                 kill "$SERVER_PID"

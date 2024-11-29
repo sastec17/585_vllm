@@ -834,12 +834,15 @@ class Scheduler:
             force_preemption_count += 1
             #Put the sequence back into the waiting queue
         waiting_queue.append(seq_group)
-        print(f"Waiting queue after scheduling: {[seq.request_id for seq in self.waiting]}")
+        print(f"Sequence group {[seq.request_id for seq in [seq_group]]}")  # This prints the request IDs of the current seq_group
+        print(f"Waiting queue before sorting: {[seq.request_id for seq in self.waiting]}")
+
 
         waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
         self.waiting = waiting_queue
         self.running = deque(sorted([item for item in running_queue if item not in preempted], key=self._get_priority))
         
+        print(f"Waiting queue after scheduling: {[seq.request_id for seq in self.waiting]}")
 
         return force_preemption_count
         

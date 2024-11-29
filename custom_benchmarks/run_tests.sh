@@ -82,7 +82,7 @@ for script_type in "${scripts[@]}"; do
         fi
         case $script_type in
             l)
-                echo "Running latency script..."
+                echo "Running latency script for ${policy}..."
                 python3 benchmark_latency.py --input-json "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
@@ -90,7 +90,7 @@ for script_type in "${scripts[@]}"; do
                     --output-json "data/${sanitized_model}/${policy}_l.json"
                 ;;
             tp)
-                echo "Running throughput script..."
+                echo "Running throughput script for ${policy}..."
                 python3 benchmark_throughput.py --dataset "$dataset_file" \
                     --model "$model" \
                     --scheduling-policy "$policy" \
@@ -98,7 +98,7 @@ for script_type in "${scripts[@]}"; do
                     --output-json "data/${sanitized_model}/${policy}_tp.json"
                 ;;
             o)
-                echo "Running online benchmarking..."
+                echo "Running online benchmarking for ${policy}..."
                 MODEL_SERVER_CMD="vllm serve $model --swap-space 16 --disable-log-requests --scheduling-policy $policy $preempt_flag"
 
                 # Start the model server in the background
@@ -109,12 +109,29 @@ for script_type in "${scripts[@]}"; do
                 SERVER_PID=$!
                 echo "Model server started with PID: $SERVER_PID"
 
-                # Wait for the server to be ready
-                echo "Waiting for the model server to initialize - Use conservative value"
-                sleep 120
+                echo "Waiting for the model server to initialize. Set timeout limit"
+                max_attempts=30
+                attempt=0
+                server_ready=false
+                while [[ $attempt -lt $max_attempts ]]; do
+                    if curl --silent --fail http://localhost:8000/health; then
+                        server_ready=true
+                        break
+                    fi
+                    echo "Server not ready yet. Retrying in 5 seconds..."
+                    sleep 5
+                    attempt=$((attempt + 1))
+                done
+
+                if [[ $server_ready == false ]]; then
+                    echo "Error: Server did not become ready within the timeout period."
+                    kill "$SERVER_PID"
+                    exit 1
+                fi
+                echo "Server is ready."
 
                 # Run the benchmarking script
-                echo "Running benchmarking script..."
+                echo "Running benchmarking script for ${policy}..."
                 python3 online_benchmarking.py --backend vllm \
                     --model "$model" \
                     --schedule "$policy" \

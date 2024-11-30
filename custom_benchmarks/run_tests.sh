@@ -87,6 +87,7 @@ for script_type in "${scripts[@]}"; do
                     --model "$model" \
                     --scheduling-policy "$policy" \
                     $preempt_flag \
+                    --disable_async_output_proc \
                     --output-json "data/${sanitized_model}/${policy}_l.json"
                 ;;
             tp)
@@ -95,11 +96,13 @@ for script_type in "${scripts[@]}"; do
                     --model "$model" \
                     --scheduling-policy "$policy" \
                     $preempt_flag \
+                    --disable_async_output_proc \
                     --output-json "data/${sanitized_model}/${policy}_tp.json"
                 ;;
             o)
                 echo "Running online benchmarking for ${policy}..."
-                MODEL_SERVER_CMD="vllm serve $model --swap-space 16 --disable-log-requests --scheduling-policy $policy $preempt_flag"
+                # Runs server with RECOMPUTE for preemption
+                MODEL_SERVER_CMD="vllm serve $model --disable-log-requests --scheduling-policy $policy $preempt_flag --disable_async_output_proc"
 
                 # Start the model server in the background
                 echo "Starting model server..."

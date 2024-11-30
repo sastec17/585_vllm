@@ -785,6 +785,7 @@ class Scheduler:
     ) -> int:
         
         MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
+        # MAGIC_RR_NUM = 5
 
         if not self.waiting:
             return 0
@@ -802,7 +803,7 @@ class Scheduler:
             running_seq for running_seq in running_queue
             if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
         ])
-        print("hi hi hi hi hi")
+        # print("hi hi hi hi hi")
 
         blocks_to_swap_out: List[Tuple[int, int]] = []
         force_preemption_count = 0
@@ -833,9 +834,8 @@ class Scheduler:
             waiting_queue.append(vseq_group)
             force_preemption_count += 1
             #Put the sequence back into the waiting queue
-        waiting_queue.append(seq_group)
+        waiting_queue.appendleft(seq_group)
 
-        waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
         self.waiting = waiting_queue
         self.running = deque(sorted([item for item in running_queue if item not in preempted], key=self._get_priority))
         

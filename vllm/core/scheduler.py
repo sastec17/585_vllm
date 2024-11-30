@@ -1032,6 +1032,8 @@ class Scheduler:
             waiting_seqs = seq_group.get_seqs(status=SequenceStatus.WAITING)
             if len(waiting_seqs) != 1:
                 logger.error(f"Invalid sequence group: {seq_group}. Waiting sequences: {waiting_seqs}")
+                running_seqs = seq_group.get_seqs(status=SequenceStatus.RUNNING)
+                logger.error(f"Running sequences: {running_seqs}")
                 raise AssertionError("Waiting sequence group should have only one prompt sequence.")
 
             assert len(waiting_seqs) == 1, (

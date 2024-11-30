@@ -802,7 +802,7 @@ class Scheduler:
         eligible_preemptions = deque([
             running_seq for running_seq in running_queue
             if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
-            and len(running_seq.get_seqs("SWAPPED")) < 1
+            and len(running_seq.get_seqs(status=SequenceStatus.SWAPPED)) < 1
         ])
         # print("hi hi hi hi hi")
 
@@ -892,7 +892,7 @@ class Scheduler:
                 num_running_seqs = vseq_group.get_max_num_running_seqs()
                 budget.subtract_num_seqs(vseq_group.request_id,
                                          num_running_seqs)
-
+                print("Preempting priority :p")
                 #Preempt out the victim sequence group
                 self._preempt(vseq_group, blocks_to_swap_out)
                 waiting_queue.appendleft(vseq_group)

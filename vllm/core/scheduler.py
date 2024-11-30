@@ -1031,6 +1031,8 @@ class Scheduler:
             seq_group = waiting_queue[0]
 
             waiting_seqs = seq_group.get_seqs(status=SequenceStatus.WAITING)
+            if len(seq_group.get_seqs(status=SequenceStatus.SWAPPED)) == 1:
+                   return
             if len(waiting_seqs) != 1:
                 logger.error(f"Invalid sequence group: {seq_group}. Waiting sequences: {waiting_seqs}")
                 running_seqs = seq_group.get_seqs(status=SequenceStatus.RUNNING)

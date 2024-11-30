@@ -835,6 +835,7 @@ class Scheduler:
             force_preemption_count += 1
             #Put the sequence back into the waiting queue
         waiting_queue.appendleft(seq_group)
+        assert len(seq_group.get_seqs()) == 1, "Sequence group should have only one sequence."
 
         self.waiting = waiting_queue
         self.running = deque(sorted([item for item in running_queue if item not in preempted], key=self._get_priority))
@@ -1029,6 +1030,10 @@ class Scheduler:
             seq_group = waiting_queue[0]
 
             waiting_seqs = seq_group.get_seqs(status=SequenceStatus.WAITING)
+            if len(waiting_seqs) != 1:
+                logger.error(f"Invalid sequence group: {seq_group}. Waiting sequences: {waiting_seqs}")
+                raise AssertionError("Waiting sequence group should have only one prompt sequence.")
+
             assert len(waiting_seqs) == 1, (
                 "Waiting sequence group should have only one prompt "
                 "sequence.")

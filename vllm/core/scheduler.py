@@ -1031,20 +1031,12 @@ class Scheduler:
             seq_group = waiting_queue[0]
 
             waiting_seqs = seq_group.get_seqs(status=SequenceStatus.WAITING)
-            if len(seq_group.get_seqs(status=SequenceStatus.SWAPPED)) == 1:
-                   return
             if len(waiting_seqs) != 1:
                 logger.error(f"Invalid sequence group: {seq_group}. Waiting sequences: {waiting_seqs}")
-                running_seqs = seq_group.get_seqs(status=SequenceStatus.RUNNING)
-                logger.error(f"Running sequences: {running_seqs}")
-                logger.error(f"Finished stopped: {seq_group.get_seqs(status=SequenceStatus.FINISHED_STOPPED)}")
-                logger.error(f"Finished aborted: {seq_group.get_seqs(status=SequenceStatus.FINISHED_ABORTED)}")
-                logger.error(f"Finished ignored: {seq_group.get_seqs(status=SequenceStatus.FINISHED_IGNORED)}")
-                logger.error(f"Finished length capped: {seq_group.get_seqs(status=SequenceStatus.FINISHED_LENGTH_CAPPED)}")
                 logger.error(f"swapped: {seq_group.get_seqs(status=SequenceStatus.SWAPPED)}")
                 logger.error(f"Group details: request_id={seq_group.request_id}, "
                     f"num_seqs={seq_group.num_seqs}, status={[seq.status for seq in seq_group.get_seqs()]}")
-                raise AssertionError("Waiting sequence group should have only one prompt sequence.")
+                raise AssertionError("Waiting sequence group should have only one prompt sequence :p.")
 
             assert len(waiting_seqs) == 1, (
                 "Waiting sequence group should have only one prompt "

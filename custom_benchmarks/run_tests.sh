@@ -109,11 +109,16 @@ for script_type in "${scripts[@]}"; do
             o)
                 echo "Running online benchmarking for ${policy}..."
                 # Runs server with RECOMPUTE for preemption
-                MODEL_SERVER_CMD="vllm serve $model --disable-log-requests --scheduling-policy $policy $preempt_flag --disable-async-output-proc --output-len "$output_length"
+                # MODEL_SERVER_CMD="vllm serve $model --disable-log-requests --scheduling-policy $policy $preempt_flag --disable-async-output-proc --output-len "$output_length""
 
                 # Start the model server in the background
                 echo "Starting model server..."
-                $MODEL_SERVER_CMD &
+                vllm serve $model \
+                            --disable-log-requests \
+                            --scheduling-policy $policy \
+                            $preempt_flag \
+                            --disable-async-output-proc \
+                            --output-len "$output_length" &
 
                 # Capture the process ID (PID) of the server
                 SERVER_PID=$!

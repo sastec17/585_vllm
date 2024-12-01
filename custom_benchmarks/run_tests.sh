@@ -1,23 +1,28 @@
 #!/bin/bash
 # Run full test suite for specified model
-# Example usage: ./run_tests.sh --model gpt2 --policy fcfs --script l --script tp 
+# Example usage: ./run_tests.sh --model gpt2 --output-len 1024 --policy fcfs --script l --script tp 
 
 # Stop on errors
 set -Eeuo pipefail
 
 model=""
+output_length=512
 policies=()
 scripts=()
 
 # Sanity check command line options
 usage() {
-  echo "Usage: $0 --model <model_name> [--policy <policy_name> ...] [--script <script_type> ...]"
+  echo "Usage: $0 --model <model_name> --output-len <output_length> [--policy <policy_name> ...] [--script <script_type> ...]"
 }
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --model|-m)
             model="$2"
+            shift 2
+            ;;
+        --output-len|-o)
+            output_length="$2"
             shift 2
             ;;
         --policy|-p)
@@ -68,7 +73,7 @@ dataset_file="data/${sanitized_model}/${sanitized_model}_data.json"
 
 if ! [ -e "$dataset_file" ]; then
     echo "Data doesn't exist for model ${model}. Creating now..."
-    python3 data/create_dataset.py --model "$model"
+    python3 data/create_dataset.py --model "$model" --output-len "$output_length"
 fi
 
 # Iterate over script types and policies
@@ -87,6 +92,7 @@ for script_type in "${scripts[@]}"; do
                     --model "$model" \
                     --scheduling-policy "$policy" \
                     $preempt_flag \
+                    --output-len "$output_length" \
                     --disable_async_output_proc \
                     --output-json "data/${sanitized_model}/${policy}_l.json"
                 ;;
@@ -96,13 +102,14 @@ for script_type in "${scripts[@]}"; do
                     --model "$model" \
                     --scheduling-policy "$policy" \
                     $preempt_flag \
+                    --output-len "$output_length" \
                     --disable_async_output_proc \
                     --output-json "data/${sanitized_model}/${policy}_tp.json"
                 ;;
             o)
                 echo "Running online benchmarking for ${policy}..."
                 # Runs server with RECOMPUTE for preemption
-                MODEL_SERVER_CMD="vllm serve $model --disable-log-requests --scheduling-policy $policy $preempt_flag --disable-async-output-proc"
+                MODEL_SERVER_CMD="vllm serve $model --disable-log-requests --scheduling-policy $policy $preempt_flag --disable-async-output-proc --output-len "$output_length"
 
                 # Start the model server in the background
                 echo "Starting model server..."

@@ -547,7 +547,6 @@ def main(args: argparse.Namespace):
     tokenizer = get_tokenizer(tokenizer_id,
                               trust_remote_code=args.trust_remote_code)
 
-    print("tokenizer", tokenizer)
     input_requests = _get_data(args.dataset_path, args.num_prompts, args.model, tokenizer)
     gootput_config_dict = check_goodput_args(args)
 

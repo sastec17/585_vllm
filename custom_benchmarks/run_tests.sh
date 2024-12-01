@@ -155,6 +155,7 @@ for script_type in "${scripts[@]}"; do
                     --model "$model" \
                     --schedule "$policy" \
                     --dataset-path "$dataset_file" \
+                    --percentile-metrics "ttft,tpot,itl,e2el" \
                     --output-json "data/${sanitized_model}/${output_length}/${policy}_o.json"
                 # After the benchmarking script completes, stop the model server
                 echo "Stopping the model server..."

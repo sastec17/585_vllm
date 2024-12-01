@@ -69,7 +69,7 @@ fi
 sanitized_model="${model//\//_}"
 mkdir -p "data/${sanitized_model}"
 # Check if custom dataset already exists for model
-dataset_file="data/${sanitized_model}/${sanitized_model}_data.json"
+dataset_file="data/${sanitized_model}/${output_length}/${sanitized_model}_data.json"
 
 if ! [ -e "$dataset_file" ]; then
     echo "Data doesn't exist for model ${model}. Creating now..."
@@ -94,7 +94,7 @@ for script_type in "${scripts[@]}"; do
                     $preempt_flag \
                     --output-len "$output_length" \
                     --disable_async_output_proc \
-                    --output-json "data/${sanitized_model}/${policy}_l.json"
+                    --output-json "data/${sanitized_model}/${output_length}/${policy}_l.json"
                 ;;
             tp)
                 echo "Running throughput script for ${policy}..."
@@ -104,7 +104,7 @@ for script_type in "${scripts[@]}"; do
                     $preempt_flag \
                     --output-len "$output_length" \
                     --disable_async_output_proc \
-                    --output-json "data/${sanitized_model}/${policy}_tp.json"
+                    --output-json "data/${sanitized_model}/${output_length}/${policy}_tp.json"
                 ;;
             o)
                 echo "Running online benchmarking for ${policy}..."
@@ -146,7 +146,7 @@ for script_type in "${scripts[@]}"; do
                     --model "$model" \
                     --schedule "$policy" \
                     --dataset-path "$dataset_file" \
-                    --output-json "data/${sanitized_model}/${policy}_o.json"
+                    --output-json "data/${sanitized_model}/${output_length}/${policy}_o.json"
                 # After the benchmarking script completes, stop the model server
                 echo "Stopping the model server..."
                 kill "$SERVER_PID"

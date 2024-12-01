@@ -102,7 +102,7 @@ for script_type in "${scripts[@]}"; do
             o)
                 echo "Running online benchmarking for ${policy}..."
                 # Runs server with RECOMPUTE for preemption
-                MODEL_SERVER_CMD="vllm serve $model --disable-log-requests --scheduling-policy $policy $preempt_flag --disable_async_output_proc"
+                MODEL_SERVER_CMD="vllm serve $model --disable-log-requests --scheduling-policy $policy $preempt_flag --disable-async-output-proc"
 
                 # Start the model server in the background
                 echo "Starting model server..."

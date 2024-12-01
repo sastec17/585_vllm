@@ -9,16 +9,21 @@ model=""
 output_length=512
 policies=()
 scripts=()
+num_preempt=60
 
 # Sanity check command line options
 usage() {
-  echo "Usage: $0 --model <model_name> --output-len <output_length> [--policy <policy_name> ...] [--script <script_type> ...]"
+  echo "Usage: $0 --model <model_name> --output-len <output_length> --num-preempt <num_preempt_tokens> [--policy <policy_name> ...] [--script <script_type> ...]"
 }
 
 while [[ $# -gt 0 ]]; do
     case $1 in
         --model|-m)
             model="$2"
+            shift 2
+            ;;
+        --num-preempt|-n)
+            num_preempt="$2"
             shift 2
             ;;
         --output-len|-o)
@@ -81,7 +86,7 @@ for script_type in "${scripts[@]}"; do
     for policy in "${policies[@]}"; do
         # Specify preemption with priority_round_robin
         if [[ "$policy" == "priority_round_robin" ]]; then
-            preempt_flag="--steps-before-preemption 60"
+            preempt_flag=f"--steps-before-preemption ${num_preempt}"
         else
             preempt_flag=""
         fi
@@ -150,6 +155,7 @@ for script_type in "${scripts[@]}"; do
                     --model "$model" \
                     --schedule "$policy" \
                     --dataset-path "$dataset_file" \
+                    --percentile-metrics "ttft,tpot,itl,e2el" \
                     --output-json "data/${sanitized_model}/${output_length}/${policy}_o.json"
                 # After the benchmarking script completes, stop the model server
                 echo "Stopping the model server..."

@@ -38,7 +38,7 @@ import numpy as np
 from backend_request_func import (ASYNC_REQUEST_FUNCS, RequestFuncInput,
                                   RequestFuncOutput)
 from tqdm.asyncio import tqdm
-from transformers import PreTrainedTokenizerBase
+from transformers import PreTrainedTokenizerBase, AutoConfig
 
 try:
     from vllm.transformers_utils.tokenizer import get_tokenizer
@@ -487,10 +487,14 @@ def parse_goodput(slo_pairs):
             "number in milliseconds.") from err
     return gootput_config_dict
 
+def get_max_context_length(pretrained_model_name_or_path: str) -> int:
+    config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
+    return getattr(config, "n_ctx", getattr(config, "max_position_embeddings", 2048))  # Default to 1024
 
 def _get_data(
     dataset_path: str,
     num_requests: int,
+    model_name: str,
     tokenizer: PreTrainedTokenizerBase
 )-> List[Tuple[str, int, int, None]]:
     with open(dataset_path, 'r') as file:
@@ -500,6 +504,11 @@ def _get_data(
     # match original sharegpt formatting
     filtered_dataset: List[Tuple[str, int, int]] = []
     print("max length", tokenizer.model_max_length)
+    max_context_length = tokenizer.model_max_length
+    if max_context_length is None:  # Fallback if not set
+        max_context_length = get_max_context_length(model_name)
+        print('updated max length', max_context_length)
+
     for i in range((len(dataset))):
         if len(filtered_dataset) == num_requests:
             break
@@ -511,7 +520,7 @@ def _get_data(
         if prompt_len < 4 or output_len < 4:
             # Prune too short sequences.
             continue
-        if prompt_len > 1024 or prompt_len + output_len > tokenizer.model_max_length:
+        if prompt_len > 1024 or prompt_len + output_len > max_context_length:
             # Prune too long sequences.
             continue
         # priority = output_len
@@ -538,8 +547,7 @@ def main(args: argparse.Namespace):
     tokenizer = get_tokenizer(tokenizer_id,
                               trust_remote_code=args.trust_remote_code)
 
-
-    input_requests = _get_data(args.dataset_path, args.num_prompts, tokenizer)
+    input_requests = _get_data(args.dataset_path, args.num_prompts, args.model, tokenizer)
     gootput_config_dict = check_goodput_args(args)
 
     benchmark_result = asyncio.run(

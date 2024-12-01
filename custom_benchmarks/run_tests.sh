@@ -72,7 +72,7 @@ if [[ ${#policies[@]} -eq 0 ]]; then
 fi
 
 sanitized_model="${model//\//_}"
-mkdir -p "data/${sanitized_model}"
+mkdir -p "data/${sanitized_model}/${output_length}"
 # Check if custom dataset already exists for model
 dataset_file="data/${sanitized_model}/${output_length}/${sanitized_model}_data.json"
 

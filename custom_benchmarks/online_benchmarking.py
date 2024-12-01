@@ -596,8 +596,8 @@ def main(args: argparse.Namespace):
         result_json["max_concurrency"] = args.max_concurrency
 
         # Merge with benchmark result
-        result_json = {**benchmark_result}
-        # result_json = {**result_json, **benchmark_result}
+        # result_json = {**benchmark_result}
+        result_json = {**result_json, **benchmark_result}
         # Save to file
         if args.output_json:
             with open(args.output_json, "w", encoding='utf-8') as outfile:

@@ -11,8 +11,8 @@ Usage: python ttft.py
 JSON_DIR = "../data/facebook_opt-125m/512/"
 JSONS = {
     "FCFS": "fcfs_o.json",
-    "Priority": "priority_o.json",
-    "Round-robin Shortest Job First": "priority_round_robin_o.json",
+    "SJF": "priority_o.json",
+    "Round-robin SJF": "priority_round_robin_o.json",
 }
 DATA_STRING = "mean_ttft_ms"
 
@@ -21,7 +21,7 @@ GRAPH_FILE = "ttft.png"
 GRAPH_TITLE = "Scheduling Algorithm TTFTs"
 Y_LABEL = "TTFT (ms)"
 BAR_COLORS = ['skyblue', 'lightgreen', 'salmon']
-ALGORITHM_CHARS_PER_LINE = 15
+ALGORITHM_CHARS_PER_LINE = 12
 # adjust graph fontsizes changing stuff
 
 def read_json_data(file_path) -> float:

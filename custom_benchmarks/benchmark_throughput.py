@@ -129,6 +129,7 @@ def main(args):
 if __name__ == "__main__":
     parser = FlexibleArgumentParser(description="Benchmark the throughput.")
     # TODO: add better description of dataset
+    parser.add_argument('--output-len', type=int, default=512)
     parser.add_argument("--dataset",
                         type=str,
                         default=None,

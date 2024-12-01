@@ -499,6 +499,7 @@ def _get_data(
     random.shuffle(dataset)
     # match original sharegpt formatting
     filtered_dataset: List[Tuple[str, int, int]] = []
+    print("max length", tokenizer.model_max_length)
     for i in range((len(dataset))):
         if len(filtered_dataset) == num_requests:
             break
@@ -510,7 +511,7 @@ def _get_data(
         if prompt_len < 4 or output_len < 4:
             # Prune too short sequences.
             continue
-        if prompt_len > 1024 or prompt_len + output_len > 1024:
+        if prompt_len > 1024 or prompt_len + output_len > tokenizer.model_max_length:
             # Prune too long sequences.
             continue
         # priority = output_len

@@ -51,7 +51,7 @@ def main(args):
                      'output_len': len(generated_text),
                      'output_tokens': len(output_tokens)})
         sanitized_model = args.model.replace('/', '_')
-        output_dir = f"data/{sanitized_model}"
+        output_dir = f"data/{sanitized_model}/{args.output_len}"
         output_file = os.path.join(output_dir, f"{sanitized_model}_data.json")
         with open(output_file, 'w') as json_file:
             json.dump(output_arr, json_file, indent=4)

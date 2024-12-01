@@ -117,8 +117,7 @@ for script_type in "${scripts[@]}"; do
                             --disable-log-requests \
                             --scheduling-policy $policy \
                             $preempt_flag \
-                            --disable-async-output-proc \
-                            --output-len "$output_length" &
+                            --disable-async-output-proc &
 
                 # Capture the process ID (PID) of the server
                 SERVER_PID=$!

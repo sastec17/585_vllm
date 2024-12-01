@@ -489,7 +489,7 @@ def parse_goodput(slo_pairs):
 
 def get_max_context_length(pretrained_model_name_or_path: str) -> int:
     config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
-    return getattr(config, "n_ctx", getattr(config, "max_position_embeddings", 1024))  # Default to 1024
+    return getattr(config, "n_ctx", getattr(config, "max_position_embeddings", 2048))  # Default to 1024
 
 def _get_data(
     dataset_path: str,

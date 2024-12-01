@@ -187,7 +187,7 @@ class EngineArgs:
     collect_detailed_traces: Optional[str] = None
     disable_async_output_proc: bool = False
     override_neuron_config: Optional[Dict[str, Any]] = None
-    scheduling_policy: Literal["fcfs", "priority","priority_round_robin"] = "fcfs"
+    scheduling_policy: Literal["fcfs", "priority","priority_round_robin","round_robin"] = "fcfs"
     steps_before_preemption: int = 30
 
     # Pooling configuration.
@@ -865,7 +865,7 @@ class EngineArgs:
 
         parser.add_argument(
             '--scheduling-policy',
-            choices=['fcfs', 'priority','priority_round_robin'],
+            choices=['fcfs', 'priority','priority_round_robin','round_robin'],
             default="fcfs",
             help='The scheduling policy to use. "fcfs" (first come first served'
             ', i.e. requests are handled in order of arrival; default) '
@@ -878,7 +878,7 @@ class EngineArgs:
             type=int,
             default=EngineArgs.steps_before_preemption,
             help='Number of generate steps before a request can be preempted'
-            'with the priority_round_robin scheduling policy.')
+            'with the priority_round_robin or round_robin scheduling policies.')
 
         parser.add_argument(
             '--pooling-type',

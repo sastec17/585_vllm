@@ -495,6 +495,7 @@ def _get_data(
     dataset_path: str,
     num_requests: int,
     model_name: str,
+    policy: str,
     tokenizer: PreTrainedTokenizerBase
 )-> List[Tuple[str, int, int, None]]:
     with open(dataset_path, 'r') as file:
@@ -523,8 +524,13 @@ def _get_data(
         if prompt_len > 1024 or prompt_len + output_len > max_context_length:
             # Prune too long sequences.
             continue
+        # base round robin - all priorities are equivalent
+        if policy == "round_robin":
+            filtered_dataset.append((prompt, prompt_len, 1, None))
+
         # priority = output_len
-        filtered_dataset.append((prompt, prompt_len, output_len, None))
+        else:
+            filtered_dataset.append((prompt, prompt_len, output_len, None))
     return filtered_dataset
 
 
@@ -547,7 +553,11 @@ def main(args: argparse.Namespace):
     tokenizer = get_tokenizer(tokenizer_id,
                               trust_remote_code=args.trust_remote_code)
 
-    input_requests = _get_data(args.dataset_path, args.num_prompts, args.model, tokenizer)
+    input_requests = _get_data(dataset_path=args.dataset_path, 
+                               num_requests=args.num_prompts, 
+                               model_name=args.model, 
+                               policy=args.schedule, 
+                               tokenizer=tokenizer)
     gootput_config_dict = check_goodput_args(args)
 
     benchmark_result = asyncio.run(
@@ -647,7 +657,7 @@ if __name__ == "__main__":
         "--schedule",
         type=str,
         default="fcfs",
-        choices=["fcfs", "priority", "priority_round_robin"],
+        choices=["fcfs", "priority", "priority_round_robin", "round_robin"],
         help="Name of desired scheduling policy.",
     )
     parser.add_argument("--dataset-path",

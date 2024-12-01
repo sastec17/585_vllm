@@ -37,6 +37,7 @@ logging.getLogger("transformers").setLevel(logging.WARNING)
 def _get_data(
     dataset_path: str,
     num_requests: int,
+    policy: str,
     tokenizer: PreTrainedTokenizerBase
 ):
     with open(dataset_path, 'r') as file:
@@ -58,8 +59,12 @@ def _get_data(
         if prompt_len > 1024 or prompt_len + output_len > 2048:
             # Prune too long sequences.
             continue
+        if policy == 'round_robin':
+            filtered_dataset.append((prompt, 1))
+
         # priority = output_len
-        filtered_dataset.append((prompt, output_len))
+        else:
+            filtered_dataset.append((prompt, output_len))
     return filtered_dataset
 
 
@@ -74,6 +79,7 @@ def main(args: argparse.Namespace):
     isinstance(tokenizer, PreTrainedTokenizerBase)
     filtered_dataset = _get_data(dataset_path=args.input_json,
                                  num_requests=100,
+                                 policy=args.scheduling_policy,
                                  tokenizer=tokenizer)
    
     # Separate prompts and priorities

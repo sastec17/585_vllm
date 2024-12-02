@@ -33,6 +33,7 @@ def main(args):
     tokenizer=llm.get_tokenizer()
     with open('data/chatbot_queries.json', 'r') as file:
         data = json.load(file)
+        # data = data[0:100]
         # TODO: Limit data for initial testing purposes
         # process in batches
         for i in range(0, len(data), args.batch_size):

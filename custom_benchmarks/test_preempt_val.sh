@@ -7,6 +7,7 @@ set -Eeuo pipefail
 
 model=""
 preempt_tokens=()
+output_length=1024
 
 # Sanity check command line options
 usage() {
@@ -118,3 +119,7 @@ for preempt_val in "${preempt_tokens[@]}"; do
     wait "$SERVER_PID" 2>/dev/null || true
     echo "Model server stopped. Batch job completed."
 done
+
+# construct e2el and graphs
+mkdir -p graphs/preempt
+python3 graphs/preempt.py "${preempt_tokens[@]}"

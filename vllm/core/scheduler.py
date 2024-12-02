@@ -925,7 +925,7 @@ class Scheduler:
         budget: SchedulingBudget,
     ) -> int:
         MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
-        MAGIC_RR_NUM = 5
+        # MAGIC_RR_NUM = 5
 
         if not self.waiting:
             return 0

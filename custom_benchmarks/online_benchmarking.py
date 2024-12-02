@@ -516,7 +516,8 @@ def _get_data(
         max_context_length = get_max_context_length(model_name)
         max_context_length = 2048 # TODO: remove for 
         print('updated max length', max_context_length)
-
+    token = 'output_tokens' if noise==0 else f"output_tokens_noise_{noise}"
+    print('token will be:', token)
     for i in range((len(dataset))):
         if len(filtered_dataset) == num_requests:
             break

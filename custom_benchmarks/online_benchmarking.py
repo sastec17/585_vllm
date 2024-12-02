@@ -526,7 +526,7 @@ def _get_data(
             continue
         # base round robin - all priorities are equivalent
         if policy == "round_robin":
-            filtered_dataset.append((prompt, prompt_len, 1, None))
+            filtered_dataset.append((prompt, prompt_len, 1024, None))
 
         # priority = output_len
         else:

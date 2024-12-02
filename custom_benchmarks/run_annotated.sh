@@ -51,7 +51,7 @@ fi
 
 # Set default scripts if none provided
 if [[ ${#noises[@]} -eq 0 ]]; then
-    noises=(10 25 50 75 100 125 150)
+    noises=(25 50 75 100 125 150)
     echo "No script types provided. Defaulting to: ${preempt_tokens[*]}"
 fi
 
@@ -69,42 +69,41 @@ mkdir -p "data/${sanitized_model}/noise/"
 policies=("priority" "priority_round_robin")
 
 for policy in "${policies[@]}"; do
-    echo "Running online benchmarking for ${policy}..."
-    # Runs server with RECOMPUTE for preemption
-    # Start the model server in the background
-    echo "Starting model server..."
-    vllm serve $model \
-                --disable-log-requests \
-                --scheduling-policy $policy \
-                --steps-before-preemption 10 \
-                --disable-async-output-proc &
-
-    # Capture the process ID (PID) of the server
-    SERVER_PID=$!
-    echo "Model server started with PID: $SERVER_PID"
-
-    echo "Waiting for the model server to initialize. Set timeout limit"
-    max_attempts=30
-    attempt=0
-    server_ready=false
-    while [[ $attempt -lt $max_attempts ]]; do
-        if curl --silent --fail http://localhost:8000/health; then
-            server_ready=true
-            break
-        fi
-        echo "Server not ready yet. Retrying in 5 seconds..."
-        sleep 5
-        attempt=$((attempt + 1))
-    done
-
-    if [[ $server_ready == false ]]; then
-        echo "Error: Server did not become ready within the timeout period."
-        kill "$SERVER_PID"
-        exit 1
-    fi
-    echo "Server is ready."
-
     for noise in "${noises[@]}"; do
+        echo "Running online benchmarking for ${policy}..."
+        # Runs server with RECOMPUTE for preemption
+        # Start the model server in the background
+        echo "Starting model server..."
+        vllm serve $model \
+                    --disable-log-requests \
+                    --scheduling-policy $policy \
+                    --steps-before-preemption 10 \
+                    --disable-async-output-proc &
+
+        # Capture the process ID (PID) of the server
+        SERVER_PID=$!
+        echo "Model server started with PID: $SERVER_PID"
+
+        echo "Waiting for the model server to initialize. Set timeout limit"
+        max_attempts=30
+        attempt=0
+        server_ready=false
+        while [[ $attempt -lt $max_attempts ]]; do
+            if curl --silent --fail http://localhost:8000/health; then
+                server_ready=true
+                break
+            fi
+            echo "Server not ready yet. Retrying in 5 seconds..."
+            sleep 5
+            attempt=$((attempt + 1))
+        done
+
+        if [[ $server_ready == false ]]; then
+            echo "Error: Server did not become ready within the timeout period."
+            kill "$SERVER_PID"
+            exit 1
+        fi
+        echo "Server is ready."
         # Run the benchmarking script
         echo "Running benchmarking script for ${policy} with ${noise} noise..."
         python3 online_benchmarking.py --backend vllm \
@@ -114,7 +113,7 @@ for policy in "${policies[@]}"; do
             --noise $noise \
             --percentile-metrics "ttft,tpot,itl,e2el" \
             --output-json "data/${sanitized_model}/noise/noise_${noise}_${policy}_o.json"
-    done
+   
         # After the benchmarking script completes, stop the model server
         echo "Stopping the model server..."
         kill "$SERVER_PID"
@@ -122,4 +121,6 @@ for policy in "${policies[@]}"; do
         # Ensure the server process is terminated
         wait "$SERVER_PID" 2>/dev/null || true
         echo "Model server stopped. Batch job completed."
+   
+    done
 done

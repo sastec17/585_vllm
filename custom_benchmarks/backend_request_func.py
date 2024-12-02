@@ -26,6 +26,7 @@ class RequestFuncInput:
     logprobs: Optional[int] = None
     multi_modal_content: Optional[dict] = None
     ignore_eos: bool = False
+    noise: int = 0
 
 
 @dataclass
@@ -51,12 +52,13 @@ async def async_request_openai_completions(
     ), "OpenAI Completions API URL must end with 'completions' or 'profile'."
 
     async with aiohttp.ClientSession(timeout=AIOHTTP_TIMEOUT) as session:
+        #output_len=request_func_input.output_len if request_func_input.noise==0 else 1024
         payload = {
             "model": request_func_input.model,
             "prompt": request_func_input.prompt,
             "temperature": 0.0,
             "best_of": request_func_input.best_of,
-            "max_tokens": request_func_input.output_len,
+            "max_tokens": 1024,
             "logprobs": request_func_input.logprobs,
             "stream": True,
             "ignore_eos": request_func_input.ignore_eos,

@@ -50,7 +50,7 @@ if [[ -z $model ]]; then
 fi
 
 # Set default scripts if none provided
-if [[ ${#preempt_tokens[@]} -eq 0 ]]; then
+if [[ ${#noises[@]} -eq 0 ]]; then
     noises=(10 25 50 75 100 125 150)
     echo "No script types provided. Defaulting to: ${preempt_tokens[*]}"
 fi

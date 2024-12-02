@@ -51,7 +51,7 @@ fi
 
 # Set default scripts if none provided
 if [[ ${#preempt_tokens[@]} -eq 0 ]]; then
-    preempt_tokens=(50 75 100 125 150)
+    preempt_tokens=(75 100)
     echo "No script types provided. Defaulting to: ${preempt_tokens[*]}"
 fi
 

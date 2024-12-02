@@ -829,7 +829,7 @@ class Scheduler:
                                         num_running_seqs)
 
             #Preempt out the victim sequence group
-            print("preempted from schedule_rr")
+            # print("preempted from schedule_rr")
             self._preempt(vseq_group, blocks_to_swap_out)
             waiting_queue.append(vseq_group)
             force_preemption_count += 1

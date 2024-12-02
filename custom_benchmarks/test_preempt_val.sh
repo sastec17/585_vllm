@@ -65,7 +65,7 @@ if ! [ -e "$dataset_file" ]; then
     echo "Data doesn't exist for model ${model}. Creating now..."
     python3 data/create_dataset.py --model "$model" --output-len "$output_length"
 fi
-
+mkdir -p "data/${sanitized_model}/test_preempt/"
 policy="priority_round_robin"
 for preempt_val in "${preempt_tokens[@]}"; do
     echo "Running online benchmarking for ${policy} with ${preempt_val} magic tokens..."

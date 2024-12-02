@@ -1168,9 +1168,10 @@ class Scheduler:
             self._schedule_priority_preemption(budget)
 
         if len(prefills.seq_groups
-               ) == 0 and self.scheduler_config.policy == "priority_round_robin":
+               ) == 0 and (self.scheduler_config.policy == "priority_round_robin" \
+                           or self.scheduler_config.policy=="round_robin"):
             self._schedule_rr(budget)
-
+        
         # Don't schedule decodes if prefills are scheduled.
         # NOTE: If `_schedule_prefills` doesn't enable chunking, self.running
         # only contains decode requests, not chunked prefills.

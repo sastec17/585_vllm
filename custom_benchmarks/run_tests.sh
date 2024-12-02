@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
         --help|-h)
             usage
             echo "    --model, -m       Specify the model name"
-            echo "    --policy, -p      Add scheduling policy from [fcfs, priority, priority_round_robin]. Defaults to all."
+            echo "    --policy, -p      Add scheduling policy from [fcfs, priority, priority_round_robin, round_robin]. Defaults to all."
             echo "    --script, -s      Specify scripts to run from [l, tp, o]. Defaults to all."
             exit 0
             ;;
@@ -67,7 +67,7 @@ fi
 
 # Set default policies if none provided
 if [[ ${#policies[@]} -eq 0 ]]; then
-    policies=("fcfs" "priority" "priority_round_robin")
+    policies=("fcfs" "priority" "priority_round_robin" "round_robin")
     echo "No policies provided. Defaulting to: ${policies[*]}"
 fi
 

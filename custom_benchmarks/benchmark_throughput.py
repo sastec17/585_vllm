@@ -52,8 +52,13 @@ def sample_requests(tokenizer: PreTrainedTokenizerBase,
         if prompt_len > 1024 or prompt_len + output_len > 2048:
             # Prune too long sequences.
             continue
-        # priority = output_len
-        filtered_dataset.append((prompt, prompt_len, output_len))
+        if args.scheduling_policy != 'round_robin':
+            # priority = output_len
+            filtered_dataset.append((prompt, prompt_len, output_len))
+        else:
+            # use same priority for round robin
+            filtered_dataset.append((prompt, prompt_len, 1))
+
     return filtered_dataset
 
 # # TODO: Ensure llm loaded properly for each mode

@@ -22,7 +22,7 @@ def main():
         GRAPH_FILE = f"graphs/preempt/{metric}.png"
 
         GRAPH_TITLE = f"Scheduling Algorithm {metric}s"
-        Y_LABEL = "{metric} (ms)"
+        Y_LABEL = f"{metric} (ms)"
         BAR_COLORS = ['skyblue', 'lightgreen', 'salmon']
         input_colors = {value: BAR_COLORS[i % len(BAR_COLORS)] for i, value in enumerate(input_values)}
 

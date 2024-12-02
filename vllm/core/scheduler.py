@@ -841,13 +841,87 @@ class Scheduler:
         
 
         return force_preemption_count
-    
-    def _round_robin_only(
+        
+
+    def _schedule_priority_preemption(
         self,
         budget: SchedulingBudget,
     ) -> int:
+        """Sorts waiting and running queue. Also, force preempt requests
+        from the running queue if their priority is lower.
+        Priority-based preemption is used with the priority policy.
+        Args:
+            budget: The scheduling budget. The argument is in-place updated
+                when any requests are scheduled.
+        Returns:
+            A count of priority-based preemptions.
+        """
+
+        waiting_queue = self.waiting
+
+        running_queue = deque(sorted(self.running, key=self._get_priority))
+
+        blocks_to_swap_out: List[Tuple[int, int]] = []
+        force_preemption_count = 0
+
+        if waiting_queue:
+            seq_group = waiting_queue.popleft()
+            num_new_seqs = seq_group.get_max_num_running_seqs()
+            num_new_tokens = self._get_num_new_tokens(seq_group,
+                                                      SequenceStatus.WAITING,
+                                                      False, budget)
+
+            #Only preempt if priority inversion exists
+            while running_queue and self._get_priority(
+                    running_queue[-1]) > self._get_priority(seq_group):
+                #Only preempt if waiting sequence cannot be allocated
+                can_allocate = self.block_manager.can_allocate(seq_group)
+                if (num_new_tokens and can_allocate == AllocStatus.OK
+                        and budget.can_schedule(num_new_tokens=num_new_tokens,
+                                                num_new_seqs=num_new_seqs)):
+                    break
+
+                #Adjust budget to remove the victim sequence group
+                vseq_group = running_queue.pop()
+                num_running_tokens = self._get_num_new_tokens(
+                    vseq_group, SequenceStatus.RUNNING, False, budget)
+                budget.subtract_num_batched_tokens(vseq_group.request_id,
+                                                   num_running_tokens)
+                num_running_seqs = vseq_group.get_max_num_running_seqs()
+                budget.subtract_num_seqs(vseq_group.request_id,
+                                         num_running_seqs)
+
+                #Preempt out the victim sequence group
+                self._preempt(vseq_group, blocks_to_swap_out)
+                waiting_queue.appendleft(vseq_group)
+                force_preemption_count += 1
+            #Put the sequence back into the waiting queue
+            waiting_queue.appendleft(seq_group)
+
+        waiting_queue = deque(sorted(waiting_queue, key=self._get_priority))
+
+        self.waiting = waiting_queue
+        self.running = running_queue
+        return force_preemption_count
+    
+    def _schedule_round_robin(
+        self,
+        budget: SchedulingBudget,
+    ) -> int:
+        """Sorts waiting and running queues. Preempts lower priority
+        running sequences which have completed a round of MAGIC_RR_NUM
+        tokens if any sequences are in the waiting queue which might not
+        be allocatable.
+        LOWER PRIORITY NUMBER IS HIGHER PRIORITY (0 is higher priority than 1)
+        Args:
+            budget: The scheduling budget. The argument is in-place updated
+                when any requests are scheduled.
+        Returns:
+            A count of priority-based preemptions.
+        """
+        
         MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
-        # MAGIC_RR_NUM = 5
+        MAGIC_RR_NUM = 5
 
         if not self.waiting:
             return 0
@@ -903,156 +977,7 @@ class Scheduler:
         
 
         return force_preemption_count
-        
-
-    def _schedule_priority_preemption(
-        self,
-        budget: SchedulingBudget,
-    ) -> int:
-        """Sorts waiting and running queue. Also, force preempt requests
-        from the running queue if their priority is lower.
-        Priority-based preemption is used with the priority policy.
-        Args:
-            budget: The scheduling budget. The argument is in-place updated
-                when any requests are scheduled.
-        Returns:
-            A count of priority-based preemptions.
-        """
-
-        waiting_queue = self.waiting
-
-        running_queue = deque(sorted(self.running, key=self._get_priority))
-
-        blocks_to_swap_out: List[Tuple[int, int]] = []
-        force_preemption_count = 0
-
-        if waiting_queue:
-            seq_group = waiting_queue.popleft()
-            num_new_seqs = seq_group.get_max_num_running_seqs()
-            num_new_tokens = self._get_num_new_tokens(seq_group,
-                                                      SequenceStatus.WAITING,
-                                                      False, budget)
-
-            #Only preempt if priority inversion exists
-            while running_queue and self._get_priority(
-                    running_queue[-1]) > self._get_priority(seq_group):
-                #Only preempt if waiting sequence cannot be allocated
-                can_allocate = self.block_manager.can_allocate(seq_group)
-                if (num_new_tokens and can_allocate == AllocStatus.OK
-                        and budget.can_schedule(num_new_tokens=num_new_tokens,
-                                                num_new_seqs=num_new_seqs)):
-                    break
-
-                #Adjust budget to remove the victim sequence group
-                vseq_group = running_queue.pop()
-                num_running_tokens = self._get_num_new_tokens(
-                    vseq_group, SequenceStatus.RUNNING, False, budget)
-                budget.subtract_num_batched_tokens(vseq_group.request_id,
-                                                   num_running_tokens)
-                num_running_seqs = vseq_group.get_max_num_running_seqs()
-                budget.subtract_num_seqs(vseq_group.request_id,
-                                         num_running_seqs)
-
-                #Preempt out the victim sequence group
-                print("yo wassup?")
-                self._preempt(vseq_group, blocks_to_swap_out)
-                waiting_queue.appendleft(vseq_group)
-                force_preemption_count += 1
-            #Put the sequence back into the waiting queue
-            waiting_queue.appendleft(seq_group)
-
-        waiting_queue = deque(sorted(waiting_queue, key=self._get_priority))
-
-        self.waiting = waiting_queue
-        self.running = running_queue
-        return force_preemption_count
     
-    def _schedule_round_robin(
-        self,
-        budget: SchedulingBudget,
-    ) -> int:
-        """Sorts waiting and running queues. Preempts lower priority
-        running sequences which have completed a round of MAGIC_RR_NUM
-        tokens if any sequences are in the waiting queue which might not
-        be allocatable.
-        LOWER PRIORITY NUMBER IS HIGHER PRIORITY (0 is higher priority than 1)
-        Args:
-            budget: The scheduling budget. The argument is in-place updated
-                when any requests are scheduled.
-        Returns:
-            A count of priority-based preemptions.
-        """
-        
-        MAGIC_RR_NUM = 5 # TODO: change to whatever value we decide on
-        
-        waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
-        add_to_running = []
-        # TODO: current system evicts based on number of higher priority requests in waiting queue, ignoring how many of those can be added without evicting (aside from the first)
-
-        if len(waiting_queue):
-            waiting_item = waiting_queue[0]
-            num_new_seqs = waiting_item.get_max_num_running_seqs()
-            num_new_tokens = self._get_num_new_tokens(waiting_item,
-                                                      SequenceStatus.WAITING,
-                                                      False, budget)
-            can_allocate = self.block_manager.can_allocate(waiting_item)
-            if (num_new_tokens and can_allocate == AllocStatus.OK
-                    and budget.can_schedule(num_new_tokens=num_new_tokens,
-                                            num_new_seqs=num_new_seqs)):
-                # TODO: does not look for how many sequences could be added, just checks if any can be added
-                add_to_running.append(waiting_item)
-                waiting_queue.popleft()
-            
-        
-        running_queue = deque(sorted(self.running, key=self._get_priority))
-        running_queue.reverse() # start evicting from lowest priority
-        force_preemption_count = 0
-        to_evict = set()
-        blocks_to_swap_out: List[Tuple[int, int]] = []
-
-        #Only preempt if job has produced rr num tokens since being scheduled
-        for running_seq in running_queue:
-            assert len(running_seq.seqs) == 1 # need to figure out what to do if not 1
-            if (running_seq.seqs[0].get_output_len() == 0 or 
-                running_seq.seqs[0].get_output_len() % MAGIC_RR_NUM != 0):
-                continue
-            if (not waiting_queue):
-                break
-            waiting_item = waiting_queue[0]
-            add_to_running.append(waiting_item)
-            running_seq.waiting_time = 0
-            to_evict.add(running_seq)
-            waiting_queue.popleft()
-
-            #Adjust budget to remove the victim sequence group
-            vseq_group = running_seq
-            num_running_tokens = self._get_num_new_tokens(
-                vseq_group, SequenceStatus.RUNNING, False, budget)
-            budget.subtract_num_batched_tokens(vseq_group.request_id,
-                                                num_running_tokens)
-            num_running_seqs = vseq_group.get_max_num_running_seqs()
-            budget.subtract_num_seqs(vseq_group.request_id,
-                                        num_running_seqs)
-
-            #Preempt out the victim sequence group
-            self._preempt(vseq_group, blocks_to_swap_out)
-            force_preemption_count += 1
-
-        running_queue = deque(item for item in running_queue if item not in to_evict)
-
-        # add waiting to front
-        waiting_queue.extendleft(add_to_running)
-
-        # add preempted to back
-        waiting_queue.extend(to_evict) 
-
-        for i in range(len(waiting_queue)):
-            waiting_queue[i].waiting_time += 1
-
-        self.waiting = waiting_queue
-        self.running = running_queue
-        return force_preemption_count
-
     def _schedule_prefills(
         self,
         budget: SchedulingBudget,
@@ -1231,13 +1156,12 @@ class Scheduler:
             self._schedule_priority_preemption(budget)
 
         if len(prefills.seq_groups
-               ) == 0 and (self.scheduler_config.policy == "priority_round_robin" \
-                           or self.scheduler_config.policy=="round_robin"):
+               ) == 0 and self.scheduler_config.policy == "priority_round_robin":
             # print("schedule_rr")
             self._schedule_rr(budget)
 
-        if len(prefills.seq_groups) == 0:
-            self._round_robin_only(budget)
+        if len(prefills.seq_groups) == 0 and self.scheduler_config.policy == "round_robin":
+            self._schedule_round_robin(budget)
         
         # Don't schedule decodes if prefills are scheduled.
         # NOTE: If `_schedule_prefills` doesn't enable chunking, self.running

@@ -920,49 +920,45 @@ class Scheduler:
             A count of priority-based preemptions.
         """
         
-        MAGIC_RR_NUM = 5 # TODO: change to whatever value we decide on
-        
-        waiting_queue = deque(sorted(self.waiting, key=lambda item: (item.priority, -item.waiting_time)))
-        add_to_running = []
-        # TODO: current system evicts based on number of higher priority requests in waiting queue, ignoring how many of those can be added without evicting (aside from the first)
+    def _schedule_round_robin(
+        self,
+        budget: SchedulingBudget,
+    ) -> int:
+        MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
+        MAGIC_RR_NUM = 5
 
-        if len(waiting_queue):
-            waiting_item = waiting_queue[0]
-            num_new_seqs = waiting_item.get_max_num_running_seqs()
-            num_new_tokens = self._get_num_new_tokens(waiting_item,
-                                                      SequenceStatus.WAITING,
-                                                      False, budget)
-            can_allocate = self.block_manager.can_allocate(waiting_item)
+        if not self.waiting:
+            return 0
+        
+        waiting_queue = self.waiting
+        running_queue = self.running
+
+        seq_group = waiting_queue.popleft()
+        # Compute the resource requirements of the top priority waiting request
+        num_new_seqs = seq_group.get_max_num_running_seqs()
+        num_new_tokens = self._get_num_new_tokens(seq_group, SequenceStatus.WAITING, False, budget)
+            
+        # Identify running requests that have produced at least MAGIC_RR_NUM tokens
+        eligible_preemptions = deque([
+            running_seq for running_seq in running_queue
+            if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
+        ])
+
+        blocks_to_swap_out: List[Tuple[int, int]] = []
+        force_preemption_count = 0
+
+        preempted = []
+        # Do some preemption
+        while eligible_preemptions:
+            can_allocate = self.block_manager.can_allocate(seq_group)
             if (num_new_tokens and can_allocate == AllocStatus.OK
                     and budget.can_schedule(num_new_tokens=num_new_tokens,
                                             num_new_seqs=num_new_seqs)):
-                # TODO: does not look for how many sequences could be added, just checks if any can be added
-                add_to_running.append(waiting_item)
-                waiting_queue.popleft()
-            
-        
-        running_queue = deque(sorted(self.running, key=self._get_priority))
-        running_queue.reverse() # start evicting from lowest priority
-        force_preemption_count = 0
-        to_evict = set()
-        blocks_to_swap_out: List[Tuple[int, int]] = []
-
-        #Only preempt if job has produced rr num tokens since being scheduled
-        for running_seq in running_queue:
-            assert len(running_seq.seqs) == 1 # need to figure out what to do if not 1
-            if (running_seq.seqs[0].get_output_len() == 0 or 
-                running_seq.seqs[0].get_output_len() % MAGIC_RR_NUM != 0):
-                continue
-            if (not waiting_queue):
                 break
-            waiting_item = waiting_queue[0]
-            add_to_running.append(waiting_item)
-            running_seq.waiting_time = 0
-            to_evict.add(running_seq)
-            waiting_queue.popleft()
 
             #Adjust budget to remove the victim sequence group
-            vseq_group = running_seq
+            vseq_group = eligible_preemptions.pop()
+            preempted.append(vseq_group)
             num_running_tokens = self._get_num_new_tokens(
                 vseq_group, SequenceStatus.RUNNING, False, budget)
             budget.subtract_num_batched_tokens(vseq_group.request_id,
@@ -972,22 +968,16 @@ class Scheduler:
                                         num_running_seqs)
 
             #Preempt out the victim sequence group
+            print("preempted from rr only")
             self._preempt(vseq_group, blocks_to_swap_out)
+            waiting_queue.append(vseq_group)
             force_preemption_count += 1
-
-        running_queue = deque(item for item in running_queue if item not in to_evict)
-
-        # add waiting to front
-        waiting_queue.extendleft(add_to_running)
-
-        # add preempted to back
-        waiting_queue.extend(to_evict) 
-
-        for i in range(len(waiting_queue)):
-            waiting_queue[i].waiting_time += 1
+            #Put the sequence back into the waiting queue
+        waiting_queue.appendleft(seq_group)
 
         self.waiting = waiting_queue
-        self.running = running_queue
+        self.running = deque([item for item in running_queue if item not in preempted])
+
         return force_preemption_count
 
     def _schedule_prefills(
@@ -1168,10 +1158,12 @@ class Scheduler:
             self._schedule_priority_preemption(budget)
 
         if len(prefills.seq_groups
-               ) == 0 and (self.scheduler_config.policy == "priority_round_robin" \
-                           or self.scheduler_config.policy=="round_robin"):
-            # print("schedule_rr")
+               ) == 0 and self.scheduler_config.policy == "priority_round_robin":
             self._schedule_rr(budget)
+
+        if len(prefills.seq_groups
+               ) == 0 and self.scheduler_config.policy == "round_robin":
+            self._schedule_round_robin(budget)
         
         # Don't schedule decodes if prefills are scheduled.
         # NOTE: If `_schedule_prefills` doesn't enable chunking, self.running

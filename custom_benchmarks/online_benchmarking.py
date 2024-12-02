@@ -249,6 +249,7 @@ async def benchmark(
     ignore_eos: bool,
     gootput_config_dict: Dict[str, float],
     max_concurrency: Optional[int],
+    noise: int,
     scheduling_policy= str
 ):
     if backend in ASYNC_REQUEST_FUNCS:
@@ -274,6 +275,7 @@ async def benchmark(
         best_of=best_of,
         multi_modal_content=test_mm_content,
         ignore_eos=ignore_eos,
+        noise=noise
     )
     test_output = await request_func(request_func_input=test_input, scheduling_policy=scheduling_policy)
     if not test_output.success:
@@ -293,7 +295,8 @@ async def benchmark(
                                          logprobs=logprobs,
                                          best_of=best_of,
                                          multi_modal_content=test_mm_content,
-                                         ignore_eos=ignore_eos)
+                                         ignore_eos=ignore_eos,
+                                         noise=noise)
         profile_output = await request_func(request_func_input=profile_input, scheduling_policy=scheduling_policy)
         if profile_output.success:
             print("Profiler started")
@@ -338,7 +341,8 @@ async def benchmark(
                                               logprobs=logprobs,
                                               best_of=best_of,
                                               multi_modal_content=mm_content,
-                                              ignore_eos=ignore_eos)
+                                              ignore_eos=ignore_eos,
+                                              noise=noise)
         tasks.append(
             asyncio.create_task(
                 limited_request_func(request_func_input=request_func_input,
@@ -355,6 +359,7 @@ async def benchmark(
             output_len=test_output_len,
             logprobs=logprobs,
             best_of=best_of,
+            noise=noise
         )
         profile_output = await request_func(request_func_input=profile_input, scheduling_policy=scheduling_policy)
         if profile_output.success:
@@ -496,6 +501,7 @@ def _get_data(
     num_requests: int,
     model_name: str,
     policy: str,
+    noise: int,
     tokenizer: PreTrainedTokenizerBase
 )-> List[Tuple[str, int, int, None]]:
     with open(dataset_path, 'r') as file:
@@ -510,7 +516,8 @@ def _get_data(
         max_context_length = get_max_context_length(model_name)
         max_context_length = 2048 # TODO: remove for 
         print('updated max length', max_context_length)
-
+    token = 'output_tokens' if noise==0 else f"output_tokens_noise_{noise}"
+    print('token will be:', token)
     for i in range((len(dataset))):
         if len(filtered_dataset) == num_requests:
             break
@@ -518,7 +525,8 @@ def _get_data(
         prompt = dataset[i]['input']
         prompt_token_ids = tokenizer(prompt).input_ids
         prompt_len = len(prompt_token_ids)
-        output_len = dataset[i]['output_tokens']
+        token = 'output_tokens' if noise==0 else f"output_tokens_noise_{noise}"
+        output_len = dataset[i][token]
         if prompt_len < 4 or output_len < 4:
             # Prune too short sequences.
             continue
@@ -557,7 +565,8 @@ def main(args: argparse.Namespace):
     input_requests = _get_data(dataset_path=args.dataset_path, 
                                num_requests=args.num_prompts, 
                                model_name=args.model, 
-                               policy=args.schedule, 
+                               policy=args.schedule,
+                               noise=args.noise,
                                tokenizer=tokenizer)
     gootput_config_dict = check_goodput_args(args)
 
@@ -582,7 +591,8 @@ def main(args: argparse.Namespace):
             ignore_eos=args.ignore_eos,
             gootput_config_dict=gootput_config_dict,
             max_concurrency=args.max_concurrency,
-            scheduling_policy=args.schedule
+            scheduling_policy=args.schedule,
+            noise=args.noise
         ))
 
     # Save config and results to json
@@ -698,6 +708,12 @@ if __name__ == "__main__":
         default=1,
         help="Generates `best_of` sequences per prompt and "
         "returns the best one.",
+    )
+    parser.add_argument(
+        "--noise",
+        type=int,
+        default=0,
+        help="Specify noise.",
     )
     parser.add_argument("--use-beam-search", action="store_true")
     parser.add_argument(

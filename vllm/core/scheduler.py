@@ -1170,6 +1170,7 @@ class Scheduler:
         if len(prefills.seq_groups
                ) == 0 and (self.scheduler_config.policy == "priority_round_robin" \
                            or self.scheduler_config.policy=="round_robin"):
+            print("schedule_rr")
             self._schedule_rr(budget)
         
         # Don't schedule decodes if prefills are scheduled.

@@ -53,6 +53,7 @@ def main():
             width=0.5  # Set bar width to make them thinner
         )
 
+        plt.ylim(80000, None)
         # Add title and axis labels with larger font sizes
         plt.title(GRAPH_TITLE, fontsize=25)
         plt.ylabel(Y_LABEL, fontsize=22)

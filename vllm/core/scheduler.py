@@ -926,7 +926,6 @@ class Scheduler:
     ) -> int:
         MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
         # MAGIC_RR_NUM = 5
-        print("schedule_round_robin")
         if not self.waiting:
             return 0
         

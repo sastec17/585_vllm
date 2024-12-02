@@ -508,6 +508,7 @@ def _get_data(
     max_context_length = tokenizer.model_max_length
     if max_context_length is None:  # Fallback if not set
         max_context_length = get_max_context_length(model_name)
+        max_context_length = 2048 # TODO: remove for 
         print('updated max length', max_context_length)
 
     for i in range((len(dataset))):

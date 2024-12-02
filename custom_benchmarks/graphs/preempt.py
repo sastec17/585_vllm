@@ -2,7 +2,7 @@ import json
 import matplotlib.pyplot as plt
 import textwrap
 import sys
-
+import os
 """
 Creates ttft.png which graphs mean TTFT from JSON_DIR json files
 Pass in as many json files as you want in the order to be shown on the graph
@@ -10,8 +10,8 @@ Usage: python ttft.py
 """
 input_values = sys.argv[1:] 
 
-
-JSON_DIR = "../data/facebook_opt-125m/test_preempt/"
+JSON_DIR = "~/585_vllm/custom_benchmarks/data/facebook_opt-125m/test_preempt/"
+#JSON_DIR = "../data/facebook_opt-125m/test_preempt/"
 JSONS = {value: f"preempt_{value}_o.json" for value in input_values}
 
 METRICS=["ttft", "e2el"]
@@ -19,7 +19,7 @@ def main():
     for metric in METRICS:
         DATA_STRING = f"mean_{metric}_ms"
 
-        GRAPH_FILE = "preempt/{metric}.png"
+        GRAPH_FILE = f"graphs/preempt/{metric}.png"
 
         GRAPH_TITLE = f"Scheduling Algorithm {metric}s"
         Y_LABEL = "{metric} (ms)"
@@ -30,6 +30,7 @@ def main():
         # adjust graph fontsizes changing stuff
 
         def read_json_data(file_path) -> float:
+            file_path = os.path.expanduser(file_path)
             with open(file_path, 'r') as file:
                 data = json.load(file)
             return data[DATA_STRING]
@@ -47,7 +48,7 @@ def main():
         plt.bar(
             wrapped_labels, 
             data.values(), 
-            color=input_colors, 
+            color=[input_colors[label] for label in input_values], 
             edgecolor='black', 
             width=0.5  # Set bar width to make them thinner
         )

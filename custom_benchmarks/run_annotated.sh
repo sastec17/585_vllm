@@ -51,7 +51,7 @@ fi
 
 # Set default scripts if none provided
 if [[ ${#noises[@]} -eq 0 ]]; then
-    noises=(0 10 25 50 75 100 125 150)
+    noises=(10 25 50 75 100 125 150)
     echo "No script types provided. Defaulting to: ${preempt_tokens[*]}"
 fi
 
@@ -114,6 +114,7 @@ for policy in "${policies[@]}"; do
             --noise $noise \
             --percentile-metrics "ttft,tpot,itl,e2el" \
             --output-json "data/${sanitized_model}/noise/noise_${noise}_${policy}_o.json"
+    done
         # After the benchmarking script completes, stop the model server
         echo "Stopping the model server..."
         kill "$SERVER_PID"
@@ -121,5 +122,4 @@ for policy in "${policies[@]}"; do
         # Ensure the server process is terminated
         wait "$SERVER_PID" 2>/dev/null || true
         echo "Model server stopped. Batch job completed."
-    done
 done

@@ -6,7 +6,7 @@ import seaborn as sns
 
 # EDITABLE
 MODEL = "facebook_opt-125m"
-OUTPUT_LENGTH = 512
+OUTPUT_LENGTH = 1024
 # STOP EDITING
 
 

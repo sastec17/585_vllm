@@ -59,7 +59,7 @@ fi
 sanitized_model="${model//\//_}"
 mkdir -p "data/${sanitized_model}/${output_length}"
 # Check if custom dataset already exists for model
-dataset_file="data/${sanitized_model}/${output_length}/${sanitized_model}_data.json"
+dataset_file="data/${sanitized_model}/${output_length}/${sanitized_model}_annotated_data.json"
 
 if ! [ -e "$dataset_file" ]; then
     echo "Data doesn't exist for model ${model}. Creating now..."

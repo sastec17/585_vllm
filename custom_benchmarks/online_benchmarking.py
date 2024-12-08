@@ -411,6 +411,7 @@ async def benchmark(
         "output_lens": actual_output_lens,
         "ttfts": [output.ttft for output in outputs],
         "itls": [output.itl for output in outputs],
+        "e2els": [output.latency for output in outputs],
         "generated_texts": [output.generated_text for output in outputs],
         "errors": [output.error for output in outputs],
     }
@@ -492,32 +493,14 @@ def parse_goodput(slo_pairs):
             "number in milliseconds.") from err
     return gootput_config_dict
 
-def get_max_context_length(pretrained_model_name_or_path: str) -> int:
-    config = AutoConfig.from_pretrained(pretrained_model_name_or_path)
-    return getattr(config, "n_ctx", getattr(config, "max_position_embeddings", 2048))  # Default to 1024
 
-def _get_data(
-    dataset_path: str,
-    num_requests: int,
-    model_name: str,
-    policy: str,
-    noise: int,
-    tokenizer: PreTrainedTokenizerBase
-)-> List[Tuple[str, int, int, None]]:
-    with open(dataset_path, 'r') as file:
-        dataset = json.load(file)
-    # Shuffle dataset
-    random.shuffle(dataset)
-    # match original sharegpt formatting
+def get_filtered_requests(dataset, 
+                          num_requests, 
+                          tokenizer, 
+                          noise,
+                          policy):
     filtered_dataset: List[Tuple[str, int, int]] = []
-    print("max length", tokenizer.model_max_length)
-    max_context_length = tokenizer.model_max_length
-    if max_context_length is None:  # Fallback if not set
-        max_context_length = get_max_context_length(model_name)
-        max_context_length = 2048 # TODO: remove for 
-        print('updated max length', max_context_length)
-    token = 'output_tokens' if noise==0 else f"output_tokens_noise_{noise}"
-    print('token will be:', token)
+    """Return num_requests filtered requests from dataset."""
     for i in range((len(dataset))):
         if len(filtered_dataset) == num_requests:
             break
@@ -530,18 +513,54 @@ def _get_data(
         if prompt_len < 4 or output_len < 4:
             # Prune too short sequences.
             continue
-        if prompt_len > 1024 or prompt_len + output_len > max_context_length:
+        if prompt_len > 1024 or prompt_len + output_len > 2048:
             # Prune too long sequences.
             continue
         # base round robin - all priorities are equivalent
         if policy == "round_robin":
             filtered_dataset.append((prompt, prompt_len, 1024, None))
-
         # priority = output_len
         else:
             filtered_dataset.append((prompt, prompt_len, output_len, None))
     return filtered_dataset
 
+
+def _get_data(
+    dataset_path: str,
+    num_requests: int,
+    model_name: str,
+    policy: str,
+    noise: int,
+    tokenizer: PreTrainedTokenizerBase
+)-> List[Tuple[str, int, int, None]]:
+    """Gets balanced + filtered dataset."""
+    token = 'output_tokens' if noise==0 else f"output_tokens_noise_{noise}"
+    print('token will be:', token)
+    with open(dataset_path, 'r') as file:
+        dataset = json.load(file)
+    
+    # separate <1024 and >=1024 output lengths
+    dataset_sm_req = [entry for entry in dataset if entry[token] < 1024]
+    dataset_lg_req = [entry for entry in dataset if entry[token] >= 1024]
+
+    sm_requests = get_filtered_requests(dataset=dataset_sm_req,
+                                        num_requests=num_requests/2,
+                                        tokenizer=tokenizer,
+                                        noise=noise,
+                                        policy=policy)
+    
+    num_requests_append = num_requests/2 - len(sm_requests)
+    lg_requests = get_filtered_requests(dataset=dataset_lg_req,
+                                        num_requests=num_requests/2 + num_requests_append,
+                                        tokenizer=tokenizer,
+                                        noise=noise,
+                                        policy=policy)
+
+
+    filtered_dataset = sm_requests + lg_requests
+    # Shuffle dataset
+    random.shuffle(filtered_dataset)
+    return filtered_dataset
 
 def main(args: argparse.Namespace):
     print(args)

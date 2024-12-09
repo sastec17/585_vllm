@@ -123,6 +123,7 @@ for script_type in "${scripts[@]}"; do
                             --disable-log-requests \
                             --scheduling-policy $policy \
                             $preempt_flag \
+                            --enable-chunked-prefill=False \
                             --disable-async-output-proc &
 
                 # Capture the process ID (PID) of the server

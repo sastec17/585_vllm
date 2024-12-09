@@ -76,6 +76,7 @@ for preempt_val in "${preempt_tokens[@]}"; do
                 --disable-log-requests \
                 --scheduling-policy $policy \
                 --steps-before-preemption $preempt_val \
+                --enable-chunked-prefill=False \
                 --disable-async-output-proc &
 
     # Capture the process ID (PID) of the server

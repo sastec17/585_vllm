@@ -78,6 +78,7 @@ for policy in "${policies[@]}"; do
                     --disable-log-requests \
                     --scheduling-policy $policy \
                     --steps-before-preemption 10 \
+                    --enable-chunked-prefill=False \
                     --disable-async-output-proc &
 
         # Capture the process ID (PID) of the server

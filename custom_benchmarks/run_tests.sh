@@ -41,7 +41,7 @@ while [[ $# -gt 0 ]]; do
         --help|-h)
             usage
             echo "    --model, -m       Specify the model name"
-            echo "    --policy, -p      Add scheduling policy from [fcfs, priority, priority_round_robin, round_robin]. Defaults to all."
+            echo "    --policy, -p      Add scheduling policy from [fcfs, priority, priority_round_robin, round_robin, priority_round_robin_reverse]. Defaults to all."
             echo "    --script, -s      Specify scripts to run from [l, tp, o]. Defaults to all."
             exit 0
             ;;
@@ -61,13 +61,13 @@ fi
 
 # Set default scripts if none provided
 if [[ ${#scripts[@]} -eq 0 ]]; then
-    scripts=("l" "tp" "o")
+    scripts=("o")
     echo "No script types provided. Defaulting to: ${scripts[*]}"
 fi
 
 # Set default policies if none provided
 if [[ ${#policies[@]} -eq 0 ]]; then
-    policies=("fcfs" "priority" "priority_round_robin" "round_robin")
+    policies=("fcfs" "priority" "priority_round_robin_reverse" "round_robin")
     echo "No policies provided. Defaulting to: ${policies[*]}"
 fi
 
@@ -85,10 +85,11 @@ fi
 for script_type in "${scripts[@]}"; do
     for policy in "${policies[@]}"; do
         # Specify preemption with priority_round_robin
-        if [[ "$policy" == "priority_round_robin" ]]; then
-            preempt_flag=f"--steps-before-preemption ${num_preempt}"
+        if [[ "$policy" == "fcfs" ||  "$policy" == "priority" ]]; then
+            preempt_flag=f""
+        # Specify preemption with round_robin approaches
         else
-            preempt_flag=""
+            preempt_flag=f"--steps-before-preemption ${num_preempt}"
         fi
         case $script_type in
             l)

@@ -66,7 +66,7 @@ if ! [ -e "$dataset_file" ]; then
     python3 data/create_dataset.py --model "$model" --output-len "$output_length"
 fi
 mkdir -p "data/${sanitized_model}/test_preempt/"
-policy="priority_round_robin"
+policy="priority_round_robin_reverse"
 for preempt_val in "${preempt_tokens[@]}"; do
     echo "Running online benchmarking for ${policy} with ${preempt_val} magic tokens..."
     # Runs server with RECOMPUTE for preemption

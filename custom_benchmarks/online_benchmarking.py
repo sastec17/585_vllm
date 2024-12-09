@@ -687,7 +687,7 @@ if __name__ == "__main__":
         "--schedule",
         type=str,
         default="fcfs",
-        choices=["fcfs", "priority", "priority_round_robin", "round_robin"],
+        choices=["fcfs", "priority", "priority_round_robin", "round_robin", "priority_round_robin_reverse"],
         help="Name of desired scheduling policy.",
     )
     parser.add_argument("--dataset-path",

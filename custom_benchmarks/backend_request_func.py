@@ -65,7 +65,8 @@ async def async_request_openai_completions(
         }
         # priority or priority round robin has priority passed through
         if scheduling_policy == "priority_round_robin" \
-            or scheduling_policy == "priority":
+            or scheduling_policy == "priority" \
+            or scheduling_policy == "priority_round_robin_reverse":
             #print("set priority for rr")
             payload["priority"] = request_func_input.output_len
 

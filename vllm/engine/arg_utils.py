@@ -865,7 +865,7 @@ class EngineArgs:
 
         parser.add_argument(
             '--scheduling-policy',
-            choices=['fcfs', 'priority','priority_round_robin','round_robin'],
+            choices=['fcfs', 'priority','priority_round_robin','round_robin','priority_round_robin_reverse'],
             default="fcfs",
             help='The scheduling policy to use. "fcfs" (first come first served'
             ', i.e. requests are handled in order of arrival; default) '

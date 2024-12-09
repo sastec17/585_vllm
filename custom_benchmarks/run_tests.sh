@@ -6,10 +6,10 @@
 set -Eeuo pipefail
 
 model=""
-output_length=512
+output_length=1024
 policies=()
 scripts=()
-num_preempt=60
+num_preempt=25
 
 # Sanity check command line options
 usage() {
@@ -55,8 +55,8 @@ done
 
 # Ensure model is specified
 if [[ -z $model ]]; then
-    echo "Error: --model is required."
-    exit 1
+    model="meta-llama/Llama-3.2-1B"
+    echo "Defaulting to meta-llama/Llama-3.2-1B"
 fi
 
 # Set default scripts if none provided
@@ -67,7 +67,7 @@ fi
 
 # Set default policies if none provided
 if [[ ${#policies[@]} -eq 0 ]]; then
-    policies=("fcfs" "priority" "priority_round_robin_reverse" "round_robin")
+    policies=("fcfs" "priority" "priority_round_robin_reverse" "round_robin" "priority_round_robin")
     echo "No policies provided. Defaulting to: ${policies[*]}"
 fi
 
@@ -86,10 +86,10 @@ for script_type in "${scripts[@]}"; do
     for policy in "${policies[@]}"; do
         # Specify preemption with priority_round_robin
         if [[ "$policy" == "fcfs" ||  "$policy" == "priority" ]]; then
-            preempt_flag=f""
+            preempt_flag=""
         # Specify preemption with round_robin approaches
         else
-            preempt_flag=f"--steps-before-preemption ${num_preempt}"
+            preempt_flag="--steps-before-preemption ${num_preempt}"
         fi
         case $script_type in
             l)

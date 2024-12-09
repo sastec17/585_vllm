@@ -72,7 +72,7 @@ if [[ ${#policies[@]} -eq 0 ]]; then
 fi
 
 sanitized_model="${model//\//_}"
-mkdir -p "data/${sanitized_model}/${output_length}"
+mkdir -p "data/${sanitized_model}/${output_length}/${num_preempt}"
 # Check if custom dataset already exists for model
 dataset_file="data/${sanitized_model}/${output_length}/${sanitized_model}_data.json"
 
@@ -157,7 +157,7 @@ for script_type in "${scripts[@]}"; do
                     --schedule "$policy" \
                     --dataset-path "$dataset_file" \
                     --percentile-metrics "ttft,tpot,itl,e2el" \
-                    --output-json "data/${sanitized_model}/${output_length}/${policy}_o.json"
+                    --output-json "data/${sanitized_model}/${output_length}/${num_preempt}/${policy}_o.json"
                 # After the benchmarking script completes, stop the model server
                 echo "Stopping the model server..."
                 kill "$SERVER_PID"

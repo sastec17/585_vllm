@@ -538,7 +538,7 @@ def _get_data(
     print('token will be:', token)
     with open(dataset_path, 'r') as file:
         dataset = json.load(file)
-    
+        dataset = dataset[0:20000]
     # separate <1024 and >=1024 output lengths
     dataset_sm_req = [entry for entry in dataset if entry[token] < 1024]
     dataset_lg_req = [entry for entry in dataset if entry[token] >= 1024]

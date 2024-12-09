@@ -187,7 +187,7 @@ class EngineArgs:
     collect_detailed_traces: Optional[str] = None
     disable_async_output_proc: bool = False
     override_neuron_config: Optional[Dict[str, Any]] = None
-    scheduling_policy: Literal["fcfs", "priority","priority_round_robin","round_robin"] = "fcfs"
+    scheduling_policy: Literal["fcfs", "priority","priority_round_robin","round_robin", "priority_round_robin_reverse"] = "fcfs"
     steps_before_preemption: int = 30
 
     # Pooling configuration.

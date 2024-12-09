@@ -824,7 +824,7 @@ class LLMEngine:
             raise ValueError(f"Got lora_request {lora_request} but LoRA is "
                              "not enabled!")
 
-        if priority != 0 and not (self.scheduler_config.policy == "priority" or self.scheduler_config.policy == "priority_round_robin"):
+        if priority != 0 and not (self.scheduler_config.policy == "priority" or self.scheduler_config.policy == "priority_round_robin" or self.scheduler_config.policy == "priority_round_robin_reverse"):
             raise ValueError(f"Got priority {priority} but "
                              "Priority scheduling is not enabled.")
 

@@ -45,13 +45,13 @@ done
 
 # Check if model is specified
 if [[ -z $model ]]; then
-    model="facebook/opt-125m"
+    model="meta-llama/Llama-3.2-1B"
     echo "No model specified. Defaulting to $model"
 fi
 
 # Set default scripts if none provided
 if [[ ${#preempt_tokens[@]} -eq 0 ]]; then
-    preempt_tokens=(75 100)
+    preempt_tokens=(5 10 15 20 25 30 35 40 45 50 55 60 65 70 75 80 85 90 95 100 105 110 115 120 125 130 135 140 145 150 155 160 165 170 175 180 185 190 195 200)
     echo "No script types provided. Defaulting to: ${preempt_tokens[*]}"
 fi
 

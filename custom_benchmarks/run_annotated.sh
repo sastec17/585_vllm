@@ -45,7 +45,7 @@ done
 
 # Check if model is specified
 if [[ -z $model ]]; then
-    model="facebook/opt-125m"
+    model="meta-llama/Llama-3.2-1B"
     echo "No model specified. Defaulting to $model"
 fi
 
@@ -68,44 +68,44 @@ fi
 mkdir -p "data/${sanitized_model}/noise/"
 policies=("priority" "priority_round_robin_reverse")
 
-for policy in "${policies[@]}"; do    
-    echo "Running online benchmarking for ${policy}..."
-    # Runs server with RECOMPUTE for preemption
-    # Start the model server in the background
-    echo "Starting model server..."
-    vllm serve $model \
-                --disable-log-requests \
-                --scheduling-policy $policy \
-                --steps-before-preemption 5 \
-                --enable-chunked-prefill=False \
-                --disable-async-output-proc &
+for policy in "${policies[@]}"; do
+    for noise in "${noises[@]}"; do    
+        echo "Running online benchmarking for ${policy}..."
+        # Runs server with RECOMPUTE for preemption
+        # Start the model server in the background
+        echo "Starting model server..."
+        vllm serve $model \
+                    --disable-log-requests \
+                    --scheduling-policy $policy \
+                    --steps-before-preemption 5 \
+                    --enable-chunked-prefill=False \
+                    --disable-async-output-proc &
 
-    # Capture the process ID (PID) of the server
-    SERVER_PID=$!
-    echo "Model server started with PID: $SERVER_PID"
+        # Capture the process ID (PID) of the server
+        SERVER_PID=$!
+        echo "Model server started with PID: $SERVER_PID"
 
-    echo "Waiting for the model server to initialize. Set timeout limit"
-    max_attempts=30
-    attempt=0
-    server_ready=false
-    while [[ $attempt -lt $max_attempts ]]; do
-        if curl --silent --fail http://localhost:8000/health; then
-            server_ready=true
-            break
+        echo "Waiting for the model server to initialize. Set timeout limit"
+        max_attempts=30
+        attempt=0
+        server_ready=false
+        while [[ $attempt -lt $max_attempts ]]; do
+            if curl --silent --fail http://localhost:8000/health; then
+                server_ready=true
+                break
+            fi
+            echo "Server not ready yet. Retrying in 5 seconds..."
+            sleep 5
+            attempt=$((attempt + 1))
+        done
+
+        if [[ $server_ready == false ]]; then
+            echo "Error: Server did not become ready within the timeout period."
+            kill "$SERVER_PID"
+            exit 1
         fi
-        echo "Server not ready yet. Retrying in 5 seconds..."
-        sleep 5
-        attempt=$((attempt + 1))
-    done
+        echo "Server is ready."
 
-    if [[ $server_ready == false ]]; then
-        echo "Error: Server did not become ready within the timeout period."
-        kill "$SERVER_PID"
-        exit 1
-    fi
-    echo "Server is ready."
-
-    for noise in "${noises[@]}"; do
         # Run the benchmarking script
         echo "Running benchmarking script for ${policy} with ${noise} noise..."
         python3 online_benchmarking.py --backend vllm \
@@ -116,14 +116,13 @@ for policy in "${policies[@]}"; do
             --percentile-metrics "ttft,tpot,itl,e2el" \
             --output-json "data/${sanitized_model}/noise/noise_${noise}_${policy}_o.json"
         echo "Completed benchmarking script for ${policy} with ${noise} noise..."
-        sleep 5
-    done
-    # After the benchmarking script completes, stop the model server
-    echo "Stopping the model server..."
-    kill "$SERVER_PID"
+        # After the benchmarking script completes, stop the model server
+        echo "Stopping the model server..."
+        kill "$SERVER_PID"
 
-    # Ensure the server process is terminated
-    wait "$SERVER_PID" 2>/dev/null || true
-    echo "Model server stopped. Batch job completed."
+        # Ensure the server process is terminated
+        wait "$SERVER_PID" 2>/dev/null || true
+        echo "Model server stopped. Batch job completed."
+    done
 done
 echo "Noise script completed."

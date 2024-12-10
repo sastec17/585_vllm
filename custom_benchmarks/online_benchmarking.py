@@ -508,12 +508,13 @@ def get_filtered_requests(dataset,
         prompt = dataset[i]['input']
         prompt_token_ids = tokenizer(prompt).input_ids
         prompt_len = len(prompt_token_ids)
+        prune_output_len = dataset[i]['output_tokens']
         token = 'output_tokens' if noise==0 else f"output_tokens_noise_{noise}"
         output_len = dataset[i][token]
-        if prompt_len < 4 or output_len < 4:
+        if prompt_len < 4 or prune_output_len < 4:
             # Prune too short sequences.
             continue
-        if prompt_len > 1024 or prompt_len + output_len > 2048:
+        if prompt_len > 1024 or prompt_len + prune_output_len > 2048:
             # Prune too long sequences.
             continue
         # base round robin - all priorities are equivalent
@@ -540,8 +541,8 @@ def _get_data(
         dataset = json.load(file)
         dataset = dataset[0:20000]
     # separate <1024 and >=1024 output lengths
-    dataset_sm_req = [entry for entry in dataset if entry[token] < 1024]
-    dataset_lg_req = [entry for entry in dataset if entry[token] >= 1024]
+    dataset_sm_req = [entry for entry in dataset if entry['output_tokens'] < 1024]
+    dataset_lg_req = [entry for entry in dataset if entry['output_tokens'] >= 1024]
 
     sm_requests = get_filtered_requests(dataset=dataset_sm_req,
                                         num_requests=num_requests/2,

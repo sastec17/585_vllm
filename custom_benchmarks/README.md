@@ -41,4 +41,4 @@ Run the following:
 ```bash
 $ python3 data/add_noise.py
 ```
-This will add varying noise levels to the existing dataset, and will store the output in a fresh file at `data/<model>/<output_len>/<model>_annotated_data.json`
+This will add varying noise levels to the existing dataset, and will store the output at `data/<model>/<output_len>/<model>_annotated_data.json`. See our paper for additional information on how noise is calculated.

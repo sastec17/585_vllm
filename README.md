@@ -6,6 +6,7 @@ See original vLLM README [here](https://github.com/sastec17/585_vllm/blob/main/v
 * OS: Linux
 * Python 3.9-3.12
 * GPU: compute capability 7.0 or higher (e.g., V100, T4, RTX20xx, A100, L4, H100, etc.)
+* CUDA 12.1 or higher (Our project used CUDA 12.4)
 
 ## Installation
 See [vLLM docs](https://docs.vllm.ai/en/latest/getting_started/installation.html) for more info
@@ -40,6 +41,8 @@ In our scripts and vLLM modifications, here is how we reference each algorithm:
 * SJF = priority in vLLM
 * RR = round_roubin in vLLM
 * RR-SJF = priority_round_robin_reverse in vLLM
+
+Note that you can replace our default model (meta-llama/Llama-3.2-1B) with any of vLLM's [supported models](https://docs.vllm.ai/en/v0.6.2/models/supported_models.html)
 
 ### Tokens Generated Before Preemption
 The `custom_benchmarks/test_preempt_val.sh` script will run our custom RR-SJF algorithm with the following defaults:
@@ -103,13 +106,13 @@ The above defaults can be changed via the following command line flags:
 
 Example usage with command line flags set:
 ```
-./custom_benchmarks/run_annotated.sh --model gpt2 --num-preempt 25 --output-len 1024 --noise 0 --noise 25
+./custom_benchmarks/run_annotated.sh --model gpt2 --num-preempt 25 --output-len 1024 --noise 50 --noise 25
 ```
 ### Varying Request Rates
 The `custom_benchmarks/test_request_rate.sh` runs FCFS, SJF, and RR-SJF scheduling algorithms with the following defaults:
 * model="meta-llama/Llama-3.2-1B"
 * num-preempt=5
-* request_rates=(25 50 75 100 125 150)
+* request_rates=(10 25 50 75 100 125 150)
 * output-len=1024
 
 Run the following within your conda env:

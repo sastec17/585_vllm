@@ -1,4 +1,4 @@
-# Approximate Shortest Job First + Round Robin to improve fairness in LLM inference
+# Round-Robin Shortest Job First Inference Scheduling for LLMs
 
 See original vLLM README [here](https://github.com/sastec17/585_vllm/blob/main/vLLM_README.md)
 

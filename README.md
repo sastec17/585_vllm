@@ -35,6 +35,12 @@ All metrics use an online inference environment, where the chosen model is serve
 
 With the exception of the the [Varying Request Rates](#varying-request-rates) section, all metrics send 1000 requests sequentially, without pause, to the server. This mimics an offline inference environment, but allows us to gather metrics on TTFT and E2EL at the request granularity. 
 
+In our scripts and vLLM modifications, here is how we reference each algorithm:
+* FCFS = fcfs in vLLM
+* SJF = priority in vLLM
+* RR = round_roubin in vLLM
+* RR-SJF = priority_round_robin_reverse in vLLM
+
 ### Tokens Generated Before Preemption
 The `custom_benchmarks/test_preempt_val.sh` script will run our custom RR-SJF algorithm with the following defaults:
 * model="meta-llama/Llama-3.2-1B"

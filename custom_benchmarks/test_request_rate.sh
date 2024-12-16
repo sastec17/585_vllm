@@ -8,6 +8,7 @@ set -Eeuo pipefail
 model=""
 request_rates=()
 output_length=1024
+num_preempt=5
 
 # Sanity check command line options
 usage() {
@@ -21,8 +22,12 @@ while [[ $# -gt 0 ]]; do
             model="$2"
             shift 2
             ;;
-        --output-len|-o)
+        --output-len|-l)
             output_length="$2"
+            shift 2
+            ;;
+        --num-preempt|-n)
+            num_preempt="$2"
             shift 2
             ;;
         --rate|-r)
@@ -33,6 +38,7 @@ while [[ $# -gt 0 ]]; do
             usage
             echo "    --model, -m       Specify the model name"
             echo "    --rate, -r      Specify desired request rate per second. Can specify more than once"    
+            echo "    --output-len, -l       Specify restricted output-length tokens"    
             exit 0
             ;;
         *)
@@ -51,7 +57,7 @@ fi
 
 # Set default scripts if none provided
 if [[ ${#request_rates[@]} -eq 0 ]]; then
-    request_rates=(25 50 75 100 125 150)
+    request_rates=(10 25 50 75 100 125 150)
     echo "No request rates provided. Defaulting to: ${request_rates[*]}"
 fi
 
@@ -66,7 +72,7 @@ if ! [ -e "$dataset_file" ]; then
     python3 data/create_dataset.py --model "$model" --output-len "$output_length"
 fi
 mkdir -p "data/${sanitized_model}/request_rate/"
-policies=("fcfs" "priority_round_robin_reverse")
+policies=("fcfs" "priority_round_robin_reverse" "priority")
 
 for policy in "${policies[@]}"; do
     echo "Running online benchmarking for ${policy}..."
@@ -76,7 +82,7 @@ for policy in "${policies[@]}"; do
     vllm serve $model \
                 --disable-log-requests \
                 --scheduling-policy $policy \
-                --steps-before-preemption 5 \
+                --steps-before-preemption $num_preempt \
                 --enable-chunked-prefill=False \
                 --disable-async-output-proc &
 

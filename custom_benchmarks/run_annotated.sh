@@ -8,6 +8,7 @@ set -Eeuo pipefail
 model=""
 noises=()
 output_length=1024
+num_preempt=5
 
 # Sanity check command line options
 usage() {
@@ -21,18 +22,24 @@ while [[ $# -gt 0 ]]; do
             model="$2"
             shift 2
             ;;
+        --num-preempt|-n)
+            num_preempt="$2"
+            shift 2
+            ;;
         --output-len|-o)
             output_length="$2"
             shift 2
             ;;
         --noise|-n)
-            preempt_tokens+=("$2")
+            noises+=("$2")
             shift 2
             ;;
         --help|-h)
             usage
             echo "    --model, -m       Specify the model name"
             echo "    --noise, -n       Specify desired noise level. Can specify more than once"    
+            echo "    --num-preempt, -n       Specify desired preempt token val"    
+            echo "    --output-len, -l       Specify restricted output-length tokens"    
             exit 0
             ;;
         *)
@@ -77,7 +84,7 @@ for policy in "${policies[@]}"; do
         vllm serve $model \
                     --disable-log-requests \
                     --scheduling-policy $policy \
-                    --steps-before-preemption 5 \
+                    --steps-before-preemption $num_preempt \
                     --enable-chunked-prefill=False \
                     --disable-async-output-proc &
 

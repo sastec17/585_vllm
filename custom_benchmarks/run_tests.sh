@@ -1,6 +1,6 @@
 #!/bin/bash
 # Run full test suite for specified model
-# Example usage: ./run_tests.sh --model gpt2 --output-len 1024 --policy fcfs --script l --script tp 
+# Example usage: ./run_tests.sh --model gpt2 --output-len 1024 --policy fcfs
 
 # Stop on errors
 set -Eeuo pipefail
@@ -9,7 +9,7 @@ model=""
 output_length=1024
 policies=()
 scripts=()
-num_preempt=25
+num_preempt=5
 
 # Sanity check command line options
 usage() {
@@ -26,7 +26,7 @@ while [[ $# -gt 0 ]]; do
             num_preempt="$2"
             shift 2
             ;;
-        --output-len|-o)
+        --output-len|-l)
             output_length="$2"
             shift 2
             ;;
@@ -41,8 +41,9 @@ while [[ $# -gt 0 ]]; do
         --help|-h)
             usage
             echo "    --model, -m       Specify the model name"
-            echo "    --policy, -p      Add scheduling policy from [fcfs, priority, priority_round_robin, round_robin, priority_round_robin_reverse]. Defaults to all."
-            echo "    --script, -s      Specify scripts to run from [l, tp, o]. Defaults to all."
+            echo "    --policy, -p      Add scheduling policy from [fcfs, priority, round_robin, priority_round_robin_reverse]. Defaults to all."
+            echo "    --output-len, -l       Specify restricted output-length tokens"    
+            echo "    --num-preempt, -n       Specify desired preempt token val"    
             exit 0
             ;;
         *)
@@ -67,7 +68,7 @@ fi
 
 # Set default policies if none provided
 if [[ ${#policies[@]} -eq 0 ]]; then
-    policies=("fcfs" "priority" "priority_round_robin_reverse" "round_robin" "priority_round_robin")
+    policies=("fcfs" "priority" "priority_round_robin_reverse" "round_robin")
     echo "No policies provided. Defaulting to: ${policies[*]}"
 fi
 

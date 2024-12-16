@@ -1,6 +1,6 @@
 #!/bin/bash
 # Test preemption values
-# Example usage: ./run_tests.sh --output-len 1024
+# Example usage: ./test_preempt_val.sh --model="meta-llama/Llama-3.2-1B" -t=5 -t=10 --output-len=1024
 
 # Stop on errors
 set -Eeuo pipefail
@@ -21,7 +21,7 @@ while [[ $# -gt 0 ]]; do
             model="$2"
             shift 2
             ;;
-        --output-len|-o)
+        --output-len|-l)
             output_length="$2"
             shift 2
             ;;
@@ -33,6 +33,7 @@ while [[ $# -gt 0 ]]; do
             usage
             echo "    --model, -m       Specify the model name"
             echo "    --token, -t       Specify desired preempt token val. Can specify more than once"    
+            echo "    --output-len, -l       Specify restricted output-length tokens"    
             exit 0
             ;;
         *)

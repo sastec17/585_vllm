@@ -784,8 +784,7 @@ class Scheduler:
         budget: SchedulingBudget, 
     ) -> int:
         
-        MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
-        # MAGIC_RR_NUM = 5
+        PREEMPT_NUM = self.scheduler_config.steps_before_preemption
 
         if not self.waiting:
             return 0
@@ -798,12 +797,11 @@ class Scheduler:
         num_new_seqs = seq_group.get_max_num_running_seqs()
         num_new_tokens = self._get_num_new_tokens(seq_group, SequenceStatus.WAITING, False, budget)
             
-        # Identify running requests that have produced at least MAGIC_RR_NUM tokens
+        # Identify running requests that have produced at least PREEMPT_NUM tokens
         eligible_preemptions = deque([
             running_seq for running_seq in running_queue
-            if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
+            if running_seq.tokens_produced_since_last_schedule >= PREEMPT_NUM
         ])
-        # print("hi hi hi hi hi")
 
         blocks_to_swap_out: List[Tuple[int, int]] = []
         force_preemption_count = 0
@@ -829,7 +827,6 @@ class Scheduler:
                                         num_running_seqs)
 
             #Preempt out the victim sequence group
-            # print("preempted from schedule_rr")
             self._preempt(vseq_group, blocks_to_swap_out)
             waiting_queue.append(vseq_group)
             force_preemption_count += 1
@@ -924,8 +921,8 @@ class Scheduler:
         self,
         budget: SchedulingBudget,
     ) -> int:
-        MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
-        # MAGIC_RR_NUM = 5
+        PREEMPT_NUM = self.scheduler_config.steps_before_preemption
+        
         if not self.waiting:
             return 0
         
@@ -937,10 +934,10 @@ class Scheduler:
         num_new_seqs = seq_group.get_max_num_running_seqs()
         num_new_tokens = self._get_num_new_tokens(seq_group, SequenceStatus.WAITING, False, budget)
             
-        # Identify running requests that have produced at least MAGIC_RR_NUM tokens
+        # Identify running requests that have produced at least PREEMPT_NUM tokens
         eligible_preemptions = deque([
             running_seq for running_seq in running_queue
-            if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
+            if running_seq.tokens_produced_since_last_schedule >= PREEMPT_NUM
         ])
 
         blocks_to_swap_out: List[Tuple[int, int]] = []
@@ -983,8 +980,7 @@ class Scheduler:
         self,
         budget: SchedulingBudget,
     ) -> int:
-        MAGIC_RR_NUM = self.scheduler_config.steps_before_preemption
-        # MAGIC_RR_NUM = 5
+        PREEMPT_NUM = self.scheduler_config.steps_before_preemption
         if not self.waiting:
             return 0
        
@@ -996,10 +992,10 @@ class Scheduler:
         num_new_seqs = seq_group.get_max_num_running_seqs()
         num_new_tokens = self._get_num_new_tokens(seq_group, SequenceStatus.WAITING, False, budget)
             
-        # Identify running requests that have produced at least MAGIC_RR_NUM tokens
+        # Identify running requests that have produced at least PREEMPT_NUM tokens
         eligible_preemptions = deque([
             running_seq for running_seq in running_queue
-            if running_seq.tokens_produced_since_last_schedule >= MAGIC_RR_NUM
+            if running_seq.tokens_produced_since_last_schedule >= PREEMPT_NUM
         ])
 
         blocks_to_swap_out: List[Tuple[int, int]] = []

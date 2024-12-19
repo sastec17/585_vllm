@@ -900,27 +900,23 @@ class Scheduler:
         self.waiting = waiting_queue
         self.running = running_queue
         return force_preemption_count
-    
-    def _schedule_round_robin(
-        self,
-        budget: SchedulingBudget,
-    ) -> int:
-        """Sorts waiting and running queues. Preempts lower priority
-        running sequences which have completed a round of MAGIC_RR_NUM
-        tokens if any sequences are in the waiting queue which might not
-        be allocatable.
-        LOWER PRIORITY NUMBER IS HIGHER PRIORITY (0 is higher priority than 1)
-        Args:
-            budget: The scheduling budget. The argument is in-place updated
-                when any requests are scheduled.
-        Returns:
-            A count of priority-based preemptions.
-        """
         
     def _schedule_round_robin(
         self,
         budget: SchedulingBudget,
     ) -> int:
+        """Preempts running sequences which have generated at least PREEMPT_NUM
+        tokens since being scheduled if any sequences are waiting in line to run.
+        This policy can be selected by setting "scheduling_policy='round_robin'" 
+        in the LLMEngineArgs before launching vLLM. 
+
+        Args:
+            budget: The scheduling budget. The argument is in-place updated
+                when any requests are scheduled.
+        Returns:
+            A count of the number of preemptions that occurred.
+        """
+        
         PREEMPT_NUM = self.scheduler_config.steps_before_preemption
         
         if not self.waiting:

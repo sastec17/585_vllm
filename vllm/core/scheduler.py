@@ -908,7 +908,8 @@ class Scheduler:
         """Preempts running sequences which have generated at least PREEMPT_NUM
         tokens since being scheduled if any sequences are waiting in line to run.
         This policy can be selected by setting "scheduling_policy='round_robin'" 
-        in the LLMEngineArgs before launching vLLM. 
+        in the EngineArgs before launching vLLM. PREEMPT_NUM can also be specified by 
+        setting "steps_before_preemption" in the EngineArgs.
 
         Args:
             budget: The scheduling budget. The argument is in-place updated
